@@ -2,7 +2,7 @@
 -- Perform Search
 -- --------------------------------------------------------------------------------
 SELECT post_id, text_id, match_rank, vw.*
-FROM emma_blog_posts_text_match_vw vw
+FROM dmt_blog_posts_text_match_vw vw
 WHERE text_id IN (3,101);
 
 -- --------------------------------------------------------------------------------

@@ -28,7 +28,7 @@ from selenium.webdriver.common.keys import Keys
 from time import sleep
 import cx_Oracle
 
-# Environment variable on Mick's WebSvr PC to enable AES256 password decryption
+# Environment variable to enable AES256 password decryption
 enc_key = os.environ.get('ENC_KEY')
 
 # Database connection info
@@ -37,17 +37,14 @@ db_usr="devopsd"
 db_enc_pwd=u"U2FsdGVkX19UeC5hv3IHtp2RMsQZaef7CoOJVYCwfys="
 db_pwd=aes256.decrypt(db_enc_pwd, enc_key)
 
-# Website forum login, not needed for scraping 
-#web_user="rogernext" # physical login
-#web_enc_pwd=u"U2FsdGVkX19/sEtqTw0WWpm+B21obsWIVQ5jCq+MGkE="
-#web_pwd=aes256.decrypt(web_enc_pwd, enc_key)
-#web_email="mick277@yandex.com"
+# The forum_id and db_website_id must be chagned for each run of this script against a forum.
+# This could be changed to use getopts parameters if needed, then all required site blogs run from a powershell kicker script.
 
 #forum_id=3 # DMT Experiences
-#db_website_id=1
+#db_website_id=1 # See database websites.id value
 forum_id=71 # DMT - Quality experience reports
 db_website_id=2 # See database websites.id value
-page_max=4 # Can be an estimate if not known
+page_max=4 # Estimate a large number if not known.
 start_page_id=1 # Default 1.
 start_post_id=1 # Default 1.
 
@@ -97,7 +94,11 @@ def TextSample(post_text):
     ret_text=ret_text.replace("\n", " ") # Strip any remaining LF's
     return ret_text[:50] # Just 50 Chars
 
-driver = webdriver.Chrome()
+# BugFix: Stop the Chromedriver throwing USB and DevTools warnings
+options = webdriver.ChromeOptions()
+options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+driver = webdriver.Chrome(options=options)
 driver.get(URL)
 
 # Loop through all the pages, break potential infinate loops

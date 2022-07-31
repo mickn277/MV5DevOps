@@ -1,6 +1,6 @@
 # Projects
 
-These are individual projects 
+These are individual projects for research projects and are only kept here as a reference of how to achieve certian tasks.
 
 ## Requirements (For all projects)
 

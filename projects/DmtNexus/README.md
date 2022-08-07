@@ -1,8 +1,8 @@
-# DMT Nexus website - Blog Post Scraper
+# DMT Nexus - website blog post scraper
 
 Scrape dmt-nexus.me website forum blog posts for reasearch, using python and selenium webdriver into an Oracle XE database built using vagrant on virtualbox.
 
-See [dmt-nexus.me](https://www.dmt-nexus.me/forum/default.aspx?g=topics&f=3) as one blog.
+See [dmt-nexus.me](https://www.dmt-nexus.me/forum/default.aspx?g=topics&f=3) as one example blog that this script will scrape.
 
 ## Requiremetns
 
@@ -39,7 +39,7 @@ echo "PATH = 'C:\var\OneDrive\bin;$env:ORACLE_HOME\bin;$env:PATH'" > .env
 echo "TNS_ADMIN = '$env:ORACLE_HOME\networks\admin'" >> .env
 
 # Run scraper in the virtual environment, output to screen and file
-pipenv run py.exe .\dmt-nexus.me-scraper-complete.py | tee -FilePath ".\dmt-nexus.me-scraper-complete.log"
+pipenv run py.exe .\dmt-nexus.me-scraper.py | tee -FilePath ".\dmt-nexus.me-scraper.log"
 
 # to create requiremetns.txt for the virtual environment
 pipenv run pip freeze

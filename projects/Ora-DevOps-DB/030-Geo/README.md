@@ -2,7 +2,6 @@
 
 ## Requirements
 
- * Build Oracle database using MV5Servers\Vagrant-XE21c-Apex22
  * Oracle SQL Developer
 
 ## Relationship Diagram

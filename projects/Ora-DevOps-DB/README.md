@@ -1,8 +1,7 @@
-# Oracle XE on Marvin5 notes
+# Ora-DevOps-DB
 
+## Requirements
 
-
-## Oracle XE Docs
-
-[XE 18c Space Optimisation June-2020](https://mathiaszarick.wordpress.com/2020/06/26/getting-the-most-out-of-oracle-database-express-edition-xe-18c/)
-
+ * Build Oracle database using MV5Servers\Vagrant-XE21c-Apex22 or newer.
+ * Oracle Client 12gR2 or newer.
+ * SqlDeveloper 22 or newer.

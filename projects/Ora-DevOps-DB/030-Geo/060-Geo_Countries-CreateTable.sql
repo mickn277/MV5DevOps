@@ -190,9 +190,9 @@ CREATE TABLE Geo_Countries (
     Country_Code_Numeric3 CHAR(3),
      -- Generic Columns
     Country_Name VARCHAR2(75) NOT NULL,
-    Country_Official_Name VARCHAR2(75),
     Country_Name_alt1 VARCHAR2(75),
     Country_Name_alt2 VARCHAR2(75),
+    Country_Name_alt3 VARCHAR2(75),
     Country_Latitude NUMBER(12,7),
     Country_Longitude NUMBER(12,7),
     Country_TopLevel_Domain VARCHAR2(3),

@@ -116,9 +116,7 @@ DECLARE
     RAISE;
   END;
 BEGIN
-    --ExecSql('ALTER TABLE Geo_Countries DROP CONSTRAINT Geo_Countries_fk10');
--- ExecSql('ALTER TABLE ReferencingTableName2 DROP CONSTRAINT ReferencingTableName2_fk11');
-	NULL;
+    ExecSql('ALTER TABLE Geo_Places DROP CONSTRAINT Geo_Places_fk3');
 END;
 /
 
@@ -185,10 +183,9 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 ------------------------------------------------------------------
 
 CREATE TABLE GEO_Currencies (
-    --id NUMBER(6) NOT NULL,
     -- Primary Key Column
     Code CHAR(3) NOT NULL,
-    Country_Code CHAR(3) NOT NULL,
+    --Place_Code VARCHAR2(6) NOT NULL,
     -- Standard Columns
     Currency_Name VARCHAR2(100) NOT NULL,
     --
@@ -260,7 +257,7 @@ CREATE UNIQUE INDEX GEO_Currencies_pk ON GEO_Currencies (Code);
 -- CREATE UNIQUE INDEX GEO_Currencies_uk1 ON GEO_Currencies (ColumnNameUK1, ColumnNameUK2);
 
 -- Foreign Key Index 1
-CREATE INDEX GEO_Currencies_ix1 ON GEO_Currencies (country_code);
+--CREATE INDEX GEO_Currencies_ix1 ON GEO_Currencies (place_code);
 
 -- Foreign Key Index 2
 -- CREATE INDEX GEO_Currencies_ix2 ON GEO_Currencies (ColumnNameFK2);
@@ -290,7 +287,7 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 --  If you want any records in ReferencedTableName(n) to delete records without deleting records in GEO_Currencies, use "ON DELETE SET NULL".
 --  If you want GEO_Currencies to lock ReferencedTableName(n) from deleting records, leave blank.
 ------------------------------------------------------------------
-ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk1 FOREIGN KEY (Country_Code) REFERENCES GEO_Countries (Code) ON DELETE SET NULL;
+--ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk1 FOREIGN KEY (place_code) REFERENCES GEO_Places (Code) ON DELETE SET NULL;
 
 -- ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk2 FOREIGN KEY (ColumnNameFK2) REFERENCES ReferencedTableName2 (ReferencedPK2) [ON DELETE CASCADE];
 
@@ -367,18 +364,18 @@ PROMPT '==================== Alter REFERENCING tables, Add Foreign Key Constrain
 -- NOTE:
 -- Don't add/remove other tables indexes, just constraints on this table
 ------------------------------------------------------------------
---DECLARE
---  PROCEDURE ExecSql(p_SQL VARCHAR2) IS
---  BEGIN
---      EXECUTE IMMEDIATE p_SQL;
---  EXCEPTION WHEN OTHERS THEN 
---    IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
---    RAISE;
---  END;
---BEGIN
---  ExecSql('ALTER TABLE Geo_Countries ADD CONSTRAINT Geo_Countries_fk10 FOREIGN KEY (Currency_Code) REFERENCES GEO_Currencies (Code) ON DELETE SET NULL');
---END;
---/
+DECLARE
+  PROCEDURE ExecSql(p_SQL VARCHAR2) IS
+  BEGIN
+      EXECUTE IMMEDIATE p_SQL;
+  EXCEPTION WHEN OTHERS THEN 
+    IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
+    RAISE;
+  END;
+BEGIN
+    ExecSql('ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk3 FOREIGN KEY (currency_code) REFERENCES Geo_Currencies (Code) ON DELETE SET NULL');
+END;
+/
 
 ------------------------------------------------------------------
 PROMPT '==================== Describe TABLE(S) after changes ===================='

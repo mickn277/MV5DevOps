@@ -1,7 +1,6 @@
-@010-Geo_Continents-CreateTable.sql
-@020-Geo_Regions-CreateTable.sql
+@010-Geo_Place_Types-CreateTable.sql
+@020-Geo_Places-CreateTable.sql
 @030-Geo_Languages-CreateTable.sql
-@060-Geo_Countries-CreateTable.sql
 @070-Geo_Currencies-CreateTable.sql
 
 /* ROLLBACK

@@ -129,7 +129,10 @@ DECLARE
         RAISE;
     END;
 BEGIN
-    ExecSql('ALTER TABLE Fin_Security_Hist_Prices DROP CONSTRAINT Fin_Security_Hist_Prices_fk1');
+    ExecSQL('ALTER TABLE fin_security_prices DROP CONSTRAINT fin_security_prices_fk1');
+    ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk1');
+    ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk2');
+    ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk3');
 END;
 /
 
@@ -200,7 +203,8 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 CREATE TABLE Fin_Securities (
     -- Primary Key Column
     Code VARCHAR2(10) NOT NULL,
-    -- 
+    --
+    Short_Desc VARCHAR2(100),
     Currency_Code CHAR(3),
     Place_Code VARCHAR2(6),
     Exchange_Code VARCHAR2(6),
@@ -216,6 +220,9 @@ PCTFREE 10 PCTUSED 40
 COMPRESS FOR ALL OPERATIONS
 ;
 
+/*
+ALTER TABLE Fin_Securities ADD (Short_Desc VARCHAR2(100));
+*/
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
 -- NOTE:
@@ -405,7 +412,10 @@ DECLARE
        RAISE;
    END;
 BEGIN
-   ExecSql('ALTER TABLE Fin_Security_Hist_Prices ADD CONSTRAINT Fin_Security_Hist_Prices_fk1 FOREIGN KEY (Security_Code) REFERENCES Fin_Securities (Code) ON DELETE CASCADE');
+    ExecSQL('ALTER TABLE fin_security_prices ADD CONSTRAINT fin_security_prices_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE CASCADE');
+    ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk2 FOREIGN KEY (security_code_2nd) REFERENCES fin_securities (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk3 FOREIGN KEY (security_code_3rd) REFERENCES fin_securities (code) ON DELETE SET NULL');
 END;
 /
 

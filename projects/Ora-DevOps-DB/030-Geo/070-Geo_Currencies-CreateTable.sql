@@ -116,7 +116,9 @@ DECLARE
     RAISE;
   END;
 BEGIN
-    ExecSql('ALTER TABLE Geo_Places DROP CONSTRAINT Geo_Places_fk3');
+    ExecSQL('ALTER TABLE fin_securities DROP CONSTRAINT fin_securities_fk2');
+    ExecSQL('ALTER TABLE fin_security_exchanges DROP CONSTRAINT fin_security_exchanges_fk1');
+    ExecSQL('ALTER TABLE geo_places DROP CONSTRAINT geo_places_fk3');
 END;
 /
 
@@ -373,7 +375,9 @@ DECLARE
     RAISE;
   END;
 BEGIN
-    ExecSql('ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk3 FOREIGN KEY (currency_code) REFERENCES Geo_Currencies (Code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE geo_places ADD CONSTRAINT geo_places_fk3 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_securities ADD CONSTRAINT fin_securities_fk2 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_security_exchanges ADD CONSTRAINT fin_security_exchanges_fk1 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
 END;
 /
 

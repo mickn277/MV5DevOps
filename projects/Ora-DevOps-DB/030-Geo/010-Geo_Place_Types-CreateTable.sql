@@ -116,7 +116,7 @@ DECLARE
     RAISE;
   END;
 BEGIN
-    ExecSql('ALTER TABLE Geo_Places DROP CONSTRAINT Geo_Places_fk2');
+    ExecSQL('ALTER TABLE geo_places DROP CONSTRAINT geo_places_fk2');
 END;
 /
 
@@ -180,7 +180,7 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 
 CREATE TABLE Geo_Place_Types (
     -- Primary Key Column
-    Type_Code CHAR(3) NOT NULL,
+    Code CHAR(3) NOT NULL,
     Parent_Code CHAR(3),
     Type_Name VARCHAR2(30) NOT NULL,
     Description VARCHAR2(255)
@@ -198,7 +198,7 @@ COMMENT ON TABLE Geo_Place_Types IS '';
 -- Run this after creating the table to generate a list of table column comments:
 --SELECT '-- COMMENT ON COLUMN '||LOWER(table_name)||'.'||LOWER(column_name)||' IS '''';' "STATEMENTS" FROM user_tab_columns WHERE table_name = UPPER('Geo_Place_Types');
 
-COMMENT ON COLUMN Geo_Place_Types.Type_Code IS 'Pk';
+COMMENT ON COLUMN Geo_Place_Types.Code IS 'Pk';
 COMMENT ON COLUMN Geo_Place_Types.Description IS '';
 
 ------------------------------------------------------------------
@@ -222,12 +222,12 @@ COMMENT ON COLUMN Geo_Place_Types.Description IS '';
 --
 ------------------------------------------------------------------
 -- Primary Key Index
-CREATE UNIQUE INDEX Geo_Place_Types_pk ON Geo_Place_Types (Type_Code);
+CREATE UNIQUE INDEX Geo_Place_Types_pk ON Geo_Place_Types (Code);
 
 ------------------------------------------------------------------
 --PROMPT '-- (ALTER TABLE) Add Constraints for this table --'
 ------------------------------------------------------------------
-ALTER TABLE Geo_Place_Types ADD CONSTRAINT Geo_Place_Types_pk PRIMARY KEY (Type_Code) USING INDEX;
+ALTER TABLE Geo_Place_Types ADD CONSTRAINT Geo_Place_Types_pk PRIMARY KEY (Code) USING INDEX;
 
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
@@ -250,29 +250,32 @@ PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
 CREATE OR REPLACE TRIGGER Geo_Place_Types_tr1 BEFORE INSERT OR UPDATE ON Geo_Place_Types FOR EACH ROW
 DECLARE
 BEGIN
-    :NEW.Type_Code := UPPER(TRIM(:NEW.Type_Code));
+    :NEW.Code := UPPER(TRIM(:NEW.Code));
     :NEW.Parent_Code := UPPER(TRIM(:NEW.Parent_Code));
     :NEW.Type_Name := TRIM(:NEW.Type_Name);
 END;
 /
 
 ------------------------------------------------------------------
---PROMPT '-- (INSERT INTO) Insert Values into this table --'
+PROMPT '-- (INSERT INTO) Insert Values into this table --'
 ------------------------------------------------------------------
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('CON', null, 'Continent');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('REG', 'CON', 'Region');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('COU', 'REG', 'Country');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('TER', 'REG', 'Territory');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('STA', 'COU', 'State');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('CIT', 'STA', 'City');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('TOW', 'STA', 'Town');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('SUB', 'CIT', 'Suburb');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('ARE', 'CON', 'Ancient Region');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('ACS', 'ARE', 'Ancient City State');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('ACI', 'ARE', 'Ancient City');
-INSERT INTO Geo_Place_Types (Type_Code, Parent_Code, Type_Name) VALUES ('ATO', 'ARE', 'Ancient Town');
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('WLD',null,'World',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('UNN','WLD','Union','Union of Countries.');
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('CON','WLD','Continent',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('REG','CON','Region',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('COU','REG','Country',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('TER','REG','Territory',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('STA','COU','State',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('CIT','STA','City',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('TOW','STA','Town',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('SUB','CIT','Suburb',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('ARE','CON','Ancient Region',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('ACO','ARE','Ancient Country',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('ACS','ARE','Ancient City State',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('ACI','ARE','Ancient City',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('ATO','ARE','Ancient Town',null);
+INSERT INTO GEO_PLACE_TYPES (CODE,PARENT_CODE,TYPE_NAME,DESCRIPTION) values ('AUR','COU','Autonomous Region','Region with some autonomy from the parent Country.');
 COMMIT;
-
 
 EXECUTE DBMS_STATS.GATHER_TABLE_STATS(ownname=>USER, tabname=>UPPER('Geo_Place_Types'), cascade=>TRUE, estimate_percent=>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt=>'for all columns size auto');
 
@@ -302,7 +305,7 @@ DECLARE
     RAISE;
   END;
 BEGIN
-    ExecSql('ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk2 FOREIGN KEY (Place_Type) REFERENCES Geo_Place_Types (Type_Code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE geo_places ADD CONSTRAINT geo_places_fk2 FOREIGN KEY (place_type) REFERENCES geo_place_types (code) ON DELETE SET NULL');
 END;
 /
 

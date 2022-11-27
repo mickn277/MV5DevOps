@@ -129,7 +129,11 @@ DECLARE
         RAISE;
     END;
 BEGIN
---    ExecSql('ALTER TABLE GEO_Currencies DROP CONSTRAINT GEO_Currencies_fk1');
+    ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk7');
+    ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk6');
+    ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk8');
+    ExecSQL('ALTER TABLE fin_security_exchanges DROP CONSTRAINT fin_security_exchanges_fk2');
+    ExecSQL('ALTER TABLE fin_securities DROP CONSTRAINT fin_securities_fk1');
 END;
 /
 
@@ -293,6 +297,11 @@ CREATE INDEX Geo_Places_ix2 ON Geo_Places (Place_Type);
 -- Tuning Index 3
 CREATE INDEX Geo_Places_ix3 ON Geo_Places (currency_code);
 
+-- Foreign Key Indexes
+CREATE INDEX Geo_Places_ix4 ON Geo_Places (Language_First_Code);
+CREATE INDEX Geo_Places_ix5 ON Geo_Places (Language_Second_Code);
+CREATE INDEX Geo_Places_ix6 ON Geo_Places (Language_Third_Code);
+
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add Constraints for this table --'
 ------------------------------------------------------------------
@@ -317,9 +326,13 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 ------------------------------------------------------------------
 ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk1 FOREIGN KEY (Parent_Code) REFERENCES Geo_Places (Code) ON DELETE SET NULL;
 
-ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk2 FOREIGN KEY (Place_Type) REFERENCES Geo_Place_Types (Type_Code) ON DELETE SET NULL;
+ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk2 FOREIGN KEY (Place_Type) REFERENCES Geo_Place_Types (Code) ON DELETE SET NULL;
 
 ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk3 FOREIGN KEY (currency_code) REFERENCES Geo_Currencies (Code) ON DELETE SET NULL;
+
+ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk4 FOREIGN KEY (Language_First_Code) REFERENCES Geo_Languages (Code) ON DELETE SET NULL;
+ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk5 FOREIGN KEY (Language_Second_Code) REFERENCES Geo_Languages (Code) ON DELETE SET NULL;
+ALTER TABLE Geo_Places ADD CONSTRAINT Geo_Places_fk6 FOREIGN KEY (Language_Third_Code) REFERENCES Geo_Languages (Code) ON DELETE SET NULL;
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
@@ -423,8 +436,11 @@ DECLARE
         RAISE;
     END;
 BEGIN
---    ExecSql('ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk1 FOREIGN KEY (place_code) REFERENCES GEO_Places (Code) ON DELETE SET NULL');
-NULL;
+    ExecSQL('ALTER TABLE fin_security_exchanges ADD CONSTRAINT fin_security_exchanges_fk2 FOREIGN KEY (place_code) REFERENCES geo_places (code) ON DELETE CASCADE');
+    ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk6 FOREIGN KEY (place_code) REFERENCES geo_places (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk8 FOREIGN KEY (place_code_3rd) REFERENCES geo_places (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk7 FOREIGN KEY (place_code_2nd) REFERENCES geo_places (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_securities ADD CONSTRAINT fin_securities_fk1 FOREIGN KEY (place_code) REFERENCES geo_places (code) ON DELETE SET NULL');
 END;
 /
 

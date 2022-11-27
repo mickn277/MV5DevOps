@@ -19,7 +19,7 @@
 -- Recreate DROP/ADD Statements for Foreign Keys added by other scripts so they are not lost by running this script.
 -- Copy results to correct sections below !
 ------------------------------------------------------------------
-/*
+
 WITH fks AS (
 SELECT 
   LOWER(rgcl.constraint_name) REFRENCING_CONSTRAINT_NAME,
@@ -38,15 +38,15 @@ WHERE rdcn.owner = USER
 )SELECT sqlstmt FROM (
 SELECT 1 ORD, '-- Alter REFERENCING tables, add Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
-SELECT 2 ORD, ' ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' DROP CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||''');' SQLSTMT FROM fks
+SELECT 2 ORD, '     ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' DROP CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||''');' SQLSTMT FROM fks
 UNION 
 SELECT 3 ORD, NULL  SQLSTMT FROM dual
 UNION
 SELECT 4 ORD, '-- Alter REFERENCING tables DROP Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
-SELECT 5 ORD, ' ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' ADD CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||' FOREIGN KEY ('||REFRENCING_COLUMN_NAME||') REFERENCES '||REFRENCED_TABLE_NAME||' ('||REFERENCED_COLUMN_NAME||') '||REFERENCE_OPTIONS||''');' SQLSTMT FROM fks
+SELECT 5 ORD, '     ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' ADD CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||' FOREIGN KEY ('||REFRENCING_COLUMN_NAME||') REFERENCES '||REFRENCED_TABLE_NAME||' ('||REFERENCED_COLUMN_NAME||') '||REFERENCE_OPTIONS||''');' SQLSTMT FROM fks
 )ORDER BY ord;
-*/
+
 
 --BugFix: Don't scan for substitution variables like ampersand in SQLDeveloper:
 SET SCAN OFF
@@ -116,9 +116,9 @@ DECLARE
     RAISE;
   END;
 BEGIN
-    ExecSql('ALTER TABLE geo_countries DROP CONSTRAINT geo_countries_fk4');
-    ExecSql('ALTER TABLE geo_countries DROP CONSTRAINT geo_countries_fk5');
-    ExecSql('ALTER TABLE geo_countries DROP CONSTRAINT geo_countries_fk6');
+     ExecSQL('ALTER TABLE geo_places DROP CONSTRAINT geo_places_fk4');
+     ExecSQL('ALTER TABLE geo_places DROP CONSTRAINT geo_places_fk5');
+     ExecSQL('ALTER TABLE geo_places DROP CONSTRAINT geo_places_fk6');
 END;
 /
 
@@ -328,9 +328,9 @@ DECLARE
     RAISE;
   END;
 BEGIN
-    ExecSql('ALTER TABLE Geo_Countries ADD CONSTRAINT Geo_Countries_fk4 FOREIGN KEY (Language_First_Code) REFERENCES Geo_Languages (Code) ON DELETE SET NULL');
-    ExecSql('ALTER TABLE Geo_Countries ADD CONSTRAINT Geo_Countries_fk5 FOREIGN KEY (Language_Second_Code) REFERENCES Geo_Languages (Code) ON DELETE SET NULL');
-    ExecSql('ALTER TABLE Geo_Countries ADD CONSTRAINT Geo_Countries_fk6 FOREIGN KEY (Language_Third_Code) REFERENCES Geo_Languages (Code) ON DELETE SET NULL');
+     ExecSQL('ALTER TABLE geo_places ADD CONSTRAINT geo_places_fk4 FOREIGN KEY (language_first_code) REFERENCES geo_languages (code) ON DELETE SET NULL');
+     ExecSQL('ALTER TABLE geo_places ADD CONSTRAINT geo_places_fk5 FOREIGN KEY (language_second_code) REFERENCES geo_languages (code) ON DELETE SET NULL');
+     ExecSQL('ALTER TABLE geo_places ADD CONSTRAINT geo_places_fk6 FOREIGN KEY (language_third_code) REFERENCES geo_languages (code) ON DELETE SET NULL');
 END;
 /
 

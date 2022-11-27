@@ -204,10 +204,13 @@ CREATE TABLE Fin_Securities (
     -- Primary Key Column
     Code VARCHAR2(10) NOT NULL,
     --
-    Short_Desc VARCHAR2(100),
+    Short_Desc VARCHAR2(100) NOT NULL,
     Currency_Code CHAR(3),
     Place_Code VARCHAR2(6),
     Exchange_Code VARCHAR2(6),
+    Price_Start_Dt DATE,
+    Price_End_Dt DATE,
+    Price_Frequency CHAR(1),
     --
     Comments VARCHAR2(255),
     -- Standard auditing columns (Use 2nd trigger definition):
@@ -221,7 +224,11 @@ COMPRESS FOR ALL OPERATIONS
 ;
 
 /*
-ALTER TABLE Fin_Securities ADD (Short_Desc VARCHAR2(100));
+ALTER TABLE Fin_Securities ADD (
+    Price_Start_Dt DATE,
+    Price_End_Dt DATE,
+    Price_Frequency CHAR(1)
+);
 */
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
@@ -295,7 +302,8 @@ ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_pk PRIMARY KEY (Code) U
 -- ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_uk1 UNIQUE (ColumnNameUK1, ColumnNameUK2) USING INDEX;
 
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c1 CHECK (archive IN (0, -1));
---ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (ColumnName IN ('Value1', 'Value2', 'Value3'));
+
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (Price_Frequency IN ('Y', 'W', 'D', 'H', 'M', 'S'));
 
 -- ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (ColumnName [<|>|=|!=] Value);
 

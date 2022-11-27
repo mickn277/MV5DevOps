@@ -182,12 +182,13 @@ CREATE TABLE Geo_Place_Types (
     -- Primary Key Column
     Code CHAR(3) NOT NULL,
     Parent_Code CHAR(3),
-    Type_Name VARCHAR2(30) NOT NULL,
+    Type_Name VARCHAR2(50) NOT NULL,
     Description VARCHAR2(255)
 )
 PCTFREE 10 PCTUSED 40
 COMPRESS FOR ALL OPERATIONS
 ;
+
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
 -- NOTE:

@@ -207,7 +207,8 @@ CREATE TABLE Fin_Security_Prices (
     High NUMBER(12,6),
     Low NUMBER(12,6),
     Close NUMBER(12,6) NOT NULL,
-    Volume NUMBER(12)
+    Volume NUMBER(12),
+    Open_Interest NUMBER(12)
 )
 PCTFREE 1 PCTUSED 20
 COMPRESS FOR ALL OPERATIONS
@@ -234,7 +235,7 @@ PARTITION BY RANGE (Security_Code)
 ;
 
 /*
-ALTER TABLE Fin_Security_Prices MODIFY (Close NUMBER(12,6) NOT NULL);
+ALTER TABLE Fin_Security_Prices ADD (Open_Interest NUMBER(12));
 */
 
 ------------------------------------------------------------------
@@ -295,15 +296,58 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 ALTER TABLE Fin_Security_Prices ADD CONSTRAINT Fin_Security_Prices_fk1 FOREIGN KEY (Security_Code) REFERENCES Fin_Securities (Code) ON DELETE CASCADE;
 
 ------------------------------------------------------------------
---PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
+-- PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
 ------------------------------------------------------------------
 
 ------------------------------------------------------------------
---PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
+PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
 -- NOTE:
 --  If the standard auditing columns Created_Dt, Created_By, Changed_Dt, Changed_By are used in the table, uncomment the 2nd Trigger.
 ------------------------------------------------------------------
-
+CREATE OR REPLACE TRIGGER Fin_Security_Prices_tr1 BEFORE INSERT ON Fin_Security_Prices FOR EACH ROW
+DECLARE
+    v_Price_Frequency fin_Securities.price_frequency%TYPE;
+BEGIN
+    SELECT NVL(v_Price_Frequency, 'D') PF
+    INTO v_Price_Frequency
+    FROM fin_Securities
+    WHERE code = :NEW.security_code;
+    
+    -- Truncate the date/time so that all dates with the same precision will align.
+    -- E.g. All yearly, Quaterly 
+    
+    -- 'Y', 'Q', 'M', 'W', 'D', 'H', 'I', 'S'
+    CASE v_Price_Frequency
+    WHEN 'Y' THEN
+        -- Yearly (YYYY) : 01-JAN 
+        :NEW.Price_Dt := TRUNC(:NEW.Price_Dt, 'YYYY');
+    WHEN 'Q' THEN
+        -- Quaterly (Q) : 01-JAN, 01-APR, 01-JUL, 01-OCT
+        :NEW.Price_Dt := TRUNC(:NEW.Price_Dt, 'Q');
+    WHEN 'M' THEN
+        -- Monthly (MM) : 1st day of the month
+        :NEW.Price_Dt :=TRUNC(:NEW.Price_Dt, 'MM');
+    WHEN 'W' THEN
+        -- Weekly
+        --WW : Same day of the week as the first day of the year
+        --IW : Same day of the week as the first day of the ISO year
+        --W : Same day of the week as the first day of the month
+        :NEW.Price_Dt :=TRUNC(:NEW.Price_Dt, 'IW');
+    WHEN 'D' THEN
+        -- Daily
+        :NEW.Price_Dt := TRUNC(:NEW.Price_Dt, 'DD');
+    WHEN 'H' THEN 
+        :NEW.Price_Dt := TRUNC(:NEW.Price_Dt, 'HH24');
+    WHEN 'M' THEN 
+        :NEW.Price_Dt := TRUNC(:NEW.Price_Dt, 'MI');
+    WHEN 'S' THEN
+        -- Can't truncate seconds as date is in seconds
+        NULL;
+    ELSE
+        Raise_Application_Error(-20001, 'fin_Securities.Price_Frequency="'||v_Price_Frequency||'" not coded in Fin_Security_Prices_tr1.');
+    END CASE;
+END;
+/
 ------------------------------------------------------------------
 PROMPT '-- (INSERT INTO) Insert Values into this table --'
 ------------------------------------------------------------------

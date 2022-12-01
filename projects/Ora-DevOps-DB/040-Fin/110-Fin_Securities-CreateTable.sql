@@ -35,18 +35,19 @@ FROM all_cons_columns rgcl
     JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
 WHERE rdcn.owner = USER 
     AND rdcn.table_name = UPPER('Fin_Securities')
+    AND rgcl.table_name != rdcn.table_name
     AND rgcn.constraint_type = 'R'
 )SELECT sqlstmt FROM (
 SELECT 1 ORD, '-- Alter REFERENCING tables, add Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
-SELECT 2 ORD, ' ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' DROP CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||''');' SQLSTMT FROM fks
+SELECT 2 ORD, '    ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' DROP CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||''');' SQLSTMT FROM fks
 UNION 
 SELECT 3 ORD, NULL  SQLSTMT FROM dual
 UNION
 SELECT 4 ORD, '-- Alter REFERENCING tables DROP Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
-SELECT 5 ORD, ' ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' ADD CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||' FOREIGN KEY ('||REFRENCING_COLUMN_NAME||') REFERENCES '||REFRENCED_TABLE_NAME||' ('||REFERENCED_COLUMN_NAME||') '||REFERENCE_OPTIONS||''');' SQLSTMT FROM fks
-)ORDER BY ord;
+SELECT 5 ORD, '    ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' ADD CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||' FOREIGN KEY ('||REFRENCING_COLUMN_NAME||') REFERENCES '||REFRENCED_TABLE_NAME||' ('||REFERENCED_COLUMN_NAME||') '||REFERENCE_OPTIONS||''');' SQLSTMT FROM fks
+) ORDER BY ord, sqlstmt;
 */
 
 -- Enable output from DBMS_OUTPUT
@@ -129,10 +130,11 @@ DECLARE
         RAISE;
     END;
 BEGIN
-    ExecSQL('ALTER TABLE fin_security_prices DROP CONSTRAINT fin_security_prices_fk1');
     ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk1');
     ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk2');
     ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk3');
+    ExecSQL('ALTER TABLE fin_security_histval DROP CONSTRAINT fin_security_histval_fk1');
+    ExecSQL('ALTER TABLE fin_security_prices DROP CONSTRAINT fin_security_prices_fk1');
 END;
 /
 
@@ -210,7 +212,7 @@ CREATE TABLE Fin_Securities (
     Exchange_Code VARCHAR2(6),
     Price_Start_Dt DATE,
     Price_End_Dt DATE,
-    Price_Frequency CHAR(1),
+    Price_Frequency CHAR(1) DEFAULT 'D' NOT NULL,
     --
     Comments VARCHAR2(255),
     -- Standard auditing columns (Use 2nd trigger definition):
@@ -224,10 +226,8 @@ COMPRESS FOR ALL OPERATIONS
 ;
 
 /*
-ALTER TABLE Fin_Securities ADD (
-    Price_Start_Dt DATE,
-    Price_End_Dt DATE,
-    Price_Frequency CHAR(1)
+ALTER TABLE Fin_Securities MODIFY (
+    Price_Frequency DEFAULT 'D' NOT NULL
 );
 */
 ------------------------------------------------------------------
@@ -240,7 +240,7 @@ COMMENT ON TABLE Fin_Securities IS '';
 -- Run this after creating the table to generate a list of table column comments:
 --SELECT '-- COMMENT ON COLUMN '||LOWER(table_name)||'.'||LOWER(column_name)||' IS '''';' "STATEMENTS" FROM user_tab_columns WHERE table_name = UPPER('Fin_Securities');
 
-COMMENT ON COLUMN Fin_Securities.Code IS 'PK';
+COMMENT ON COLUMN Fin_Securities.Code IS 'PK, should be [SECURITY].[EXCHANGE|PLACE], must start with 0-9 or A-Z.';
 
 -- COMMENT ON COLUMN Fin_Securities.ColumnNameUK1 IS 'UK 1of2';
 -- COMMENT ON COLUMN Fin_Securities.ColumnNameUK2 IS 'UK 2of2';
@@ -303,9 +303,13 @@ ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_pk PRIMARY KEY (Code) U
 
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c1 CHECK (archive IN (0, -1));
 
-ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (Price_Frequency IN ('Y', 'W', 'D', 'H', 'M', 'S'));
+-- ALTER TABLE Fin_Securities DROP CONSTRAINT Fin_Securities_c2;
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (Price_Frequency IN ('Y', 'Q', 'M', 'W', 'D', 'H', 'I', 'S'));
 
--- ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (ColumnName [<|>|=|!=] Value);
+-- ALTER TABLE Fin_Securities DROP CONSTRAINT Fin_Securities_c3;
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (REGEXP_LIKE(Code, '^[0-9A-Z]+\.*[0-9A-Z]+$'));
+
+-- ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c4 CHECK (ColumnName [<|>|=|!=] Value);
 
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
@@ -320,7 +324,7 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 ------------------------------------------------------------------
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk1 FOREIGN KEY (Place_Code) REFERENCES Geo_Places (Code) ON DELETE SET NULL;
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk2 FOREIGN KEY (Currency_Code) REFERENCES Geo_Currencies (Code) ON DELETE SET NULL;
---ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk3 FOREIGN KEY (Exchange_Code) REFERENCES Geo_Exchanges (Code) ON DELETE SET NULL;
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk3 FOREIGN KEY (Exchange_Code) REFERENCES Fin_Security_Exchanges (Code) ON DELETE SET NULL;
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
@@ -361,8 +365,12 @@ PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
 CREATE OR REPLACE TRIGGER Fin_Securities_tr1 BEFORE INSERT OR UPDATE ON Fin_Securities FOR EACH ROW
 DECLARE
     v_Changed_By VARCHAR2(100);
+    v_Exch_Or_Place Fin_Securities.code%TYPE;
 BEGIN
     v_Changed_By := ChangedBy_fn;
+    
+    -- [SECURITY].[EXCHANGE|PLACE] The suffix in the Security Code should be the exchange or the place, but don't enforce it
+    -- because variations may be required for different purposes.
 
     -- Onle set Created when INSERTING
     IF INSERTING THEN
@@ -420,10 +428,11 @@ DECLARE
        RAISE;
    END;
 BEGIN
-    ExecSQL('ALTER TABLE fin_security_prices ADD CONSTRAINT fin_security_prices_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE CASCADE');
     ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE SET NULL');
     ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk2 FOREIGN KEY (security_code_2nd) REFERENCES fin_securities (code) ON DELETE SET NULL');
     ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk3 FOREIGN KEY (security_code_3rd) REFERENCES fin_securities (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_security_histval ADD CONSTRAINT fin_security_histval_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE CASCADE');
+    ExecSQL('ALTER TABLE fin_security_prices ADD CONSTRAINT fin_security_prices_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE CASCADE');
 END;
 /
 

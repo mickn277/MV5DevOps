@@ -129,9 +129,7 @@ DECLARE
         RAISE;
     END;
 BEGIN
---ExecSql('ALTER TABLE ReferencingTableName1 DROP CONSTRAINT ReferencingTableName1_fk10');
---ExecSql('ALTER TABLE ReferencingTableName2 DROP CONSTRAINT ReferencingTableName2_fk11');
-	NULL;
+    ExecSql('ALTER TABLE Fin_Securities DROP CONSTRAINT Fin_Securities_fk3');
 END;
 /
 
@@ -404,19 +402,18 @@ PROMPT '==================== Alter REFERENCING tables, Add Foreign Key Constrain
 -- NOTE:
 -- Don't add/remove other tables indexes, just constraints on this table
 ------------------------------------------------------------------
---DECLARE
---    PROCEDURE ExecSql(p_SQL VARCHAR2) IS
---    BEGIN
---        EXECUTE IMMEDIATE p_SQL;
---    EXCEPTION WHEN OTHERS THEN 
---        IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
---        RAISE;
---    END;
---BEGIN
---    ExecSql('ALTER TABLE ReferencingTableName1 ADD CONSTRAINT ReferencingTableName1_fk10 FOREIGN KEY (ReferencingColumnName1) REFERENCES Fin_Security_Exchanges (code) [ON DELETE SET NULL]');
---    ExecSql('ALTER TABLE ReferencingTableName2 ADD CONSTRAINT ReferencingTableName2_fk11 FOREIGN KEY (ReferencingColumnName2) REFERENCES Fin_Security_Exchanges (code) [ON DELETE CASCADE]');
---END;
---/
+DECLARE
+    PROCEDURE ExecSql(p_SQL VARCHAR2) IS
+    BEGIN
+        EXECUTE IMMEDIATE p_SQL;
+    EXCEPTION WHEN OTHERS THEN 
+        IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
+        RAISE;
+    END;
+BEGIN
+    ExecSql('ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk3 FOREIGN KEY (Exchange_Code) REFERENCES Fin_Security_Exchanges (Code) ON DELETE SET NULL');
+END;
+/
 
 ------------------------------------------------------------------
 PROMPT '==================== Describe TABLE(S) after changes ===================='

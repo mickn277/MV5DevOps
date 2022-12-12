@@ -306,10 +306,10 @@ PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
 ------------------------------------------------------------------
 CREATE OR REPLACE TRIGGER Fin_Security_Prices_tr1 BEFORE INSERT ON Fin_Security_Prices FOR EACH ROW
 DECLARE
-    v_Price_Frequency fin_Securities.price_frequency%TYPE;
+    v_Frequency fin_Securities.Frequency%TYPE;
 BEGIN
-    SELECT NVL(v_Price_Frequency, 'D') PF
-    INTO v_Price_Frequency
+    SELECT NVL(v_Frequency, 'D') PF
+    INTO v_Frequency
     FROM fin_Securities
     WHERE code = :NEW.security_code;
     
@@ -317,7 +317,7 @@ BEGIN
     -- E.g. All yearly, Quaterly 
     
     -- 'Y', 'Q', 'M', 'W', 'D', 'H', 'I', 'S'
-    CASE v_Price_Frequency
+    CASE v_Frequency
     WHEN 'Y' THEN
         -- Yearly (YYYY) : 01-JAN 
         :NEW.Price_Dt := TRUNC(:NEW.Price_Dt, 'YYYY');
@@ -344,7 +344,7 @@ BEGIN
         -- Can't truncate seconds as date is in seconds
         NULL;
     ELSE
-        Raise_Application_Error(-20001, 'fin_Securities.Price_Frequency="'||v_Price_Frequency||'" not coded in Fin_Security_Prices_tr1.');
+        Raise_Application_Error(-20001, 'fin_Securities.Frequency="'||v_Frequency||'" not coded in Fin_Security_Prices_tr1.');
     END CASE;
 END;
 /

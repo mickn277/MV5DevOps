@@ -76,7 +76,7 @@ FROM all_cons_columns rgcl
     JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
     JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
 WHERE rdcn.owner = USER 
-    AND rdcn.table_name = UPPER('Fin_Securities')
+    AND rdcn.table_name = UPPER('PrimaryTableName')
     AND rgcl.table_name != rdcn.table_name
     AND rgcn.constraint_type = 'R'
 )SELECT sqlstmt FROM (

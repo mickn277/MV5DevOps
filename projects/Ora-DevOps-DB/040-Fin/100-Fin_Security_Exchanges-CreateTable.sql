@@ -198,12 +198,11 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 
 CREATE TABLE Fin_Security_Exchanges (
     -- Primary Key Column
-    code VARCHAR2(30) NOT NULL,
+    code VARCHAR2(10) NOT NULL,
     -- 
     Short_Desc VARCHAR2(100),
     Description VARCHAR2(4000),
     -- Foreign Key Columns:
-    currency_code CHAR(3),
     place_code VARCHAR2(6),
     -- Standard auditing columns (Use 2nd trigger definition):
     Created_Dt DATE NOT NULL,
@@ -229,7 +228,7 @@ COMMENT ON COLUMN Fin_Security_Exchanges.code IS 'PK';
 
 -- COMMENT ON COLUMN Fin_Security_Exchanges.ColumnNameUK1 IS 'UK 1of2';
 -- COMMENT ON COLUMN Fin_Security_Exchanges.ColumnNameUK2 IS 'UK 2of2';
-COMMENT ON COLUMN Fin_Security_Exchanges.currency_code IS 'FK1';
+--COMMENT ON COLUMN Fin_Security_Exchanges.currency_code IS 'FK1';
 COMMENT ON COLUMN Fin_Security_Exchanges.place_code IS 'FK2';
 
 COMMENT ON COLUMN Fin_Security_Exchanges.Created_By IS 'Auditing column';
@@ -271,7 +270,7 @@ CREATE UNIQUE INDEX Fin_Security_Exchanges_pk ON Fin_Security_Exchanges (code);
 -- CREATE UNIQUE INDEX Fin_Security_Exchanges_uk1 ON Fin_Security_Exchanges (ColumnNameUK1, ColumnNameUK2);
 
 -- Foreign Key Index 1
-CREATE INDEX Fin_Security_Exchanges_ix1 ON Fin_Security_Exchanges (currency_code);
+--CREATE INDEX Fin_Security_Exchanges_ix1 ON Fin_Security_Exchanges (currency_code);
 
 -- Foreign Key Index 2
 CREATE INDEX Fin_Security_Exchanges_ix2 ON Fin_Security_Exchanges (place_code);
@@ -303,7 +302,7 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 --  If you want any records in ReferencedTableName(n) to delete records without deleting records in Fin_Security_Exchanges, use "ON DELETE SET NULL".
 --  If you want Fin_Security_Exchanges to lock ReferencedTableName(n) from deleting records, leave blank.
 ------------------------------------------------------------------
-ALTER TABLE Fin_Security_Exchanges ADD CONSTRAINT Fin_Security_Exchanges_fk1 FOREIGN KEY (currency_code) REFERENCES Geo_Currencies (code) ON DELETE SET NULL;
+--ALTER TABLE Fin_Security_Exchanges ADD CONSTRAINT Fin_Security_Exchanges_fk1 FOREIGN KEY (currency_code) REFERENCES Geo_Currencies (code) ON DELETE SET NULL;
 
 ALTER TABLE Fin_Security_Exchanges ADD CONSTRAINT Fin_Security_Exchanges_fk2 FOREIGN KEY (place_code) REFERENCES Geo_Places (code) ON DELETE CASCADE;
 

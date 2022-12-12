@@ -205,16 +205,18 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 CREATE TABLE Fin_Securities (
     -- Primary Key Column
     Code VARCHAR2(10) NOT NULL,
+    EID NUMBER(11) NOT NULL,
     --
-    Short_Desc VARCHAR2(100) NOT NULL,
+    Short_Desc VARCHAR2(50) NOT NULL,
     Currency_Code CHAR(3),
     Place_Code VARCHAR2(6),
     Exchange_Code VARCHAR2(6),
-    Price_Start_Dt DATE,
-    Price_End_Dt DATE,
-    Price_Frequency CHAR(1) DEFAULT 'D' NOT NULL,
+    Start_Dt DATE,
+    End_Dt DATE,
+    Frequency CHAR(1) DEFAULT 'D' NOT NULL,
     --
-    Comments VARCHAR2(255),
+    Description VARCHAR2(255),
+    Series_Table VARCHAR2(50),
     -- Standard auditing columns (Use 2nd trigger definition):
     Created_Dt DATE NOT NULL,
     Created_By VARCHAR2(100),
@@ -227,9 +229,18 @@ COMPRESS FOR ALL OPERATIONS
 
 /*
 ALTER TABLE Fin_Securities MODIFY (
-    Price_Frequency DEFAULT 'D' NOT NULL
+    EID NUMBER(11) nOT NULL
 );
+UPDATE Fin_Securities
+set Description = Comments
+;
+commit;
+ALTER TABLE Fin_Securities ADD (
+    EID NUMBER(11)
+);
+
 */
+
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
 -- NOTE:
@@ -283,7 +294,7 @@ PROMPT '-- (CREATE INDEX) Create Index for this table --'
 CREATE UNIQUE INDEX Fin_Securities_pk ON Fin_Securities (Code);
 
 -- Unique Key Index 1
--- CREATE UNIQUE INDEX Fin_Securities_uk1 ON Fin_Securities (ColumnNameUK1, ColumnNameUK2);
+CREATE UNIQUE INDEX Fin_Securities_uk1 ON Fin_Securities (eid);
 
 -- Foreign Key Index 1
 CREATE INDEX Fin_Securities_ix1 ON Fin_Securities (Place_Code);
@@ -299,17 +310,17 @@ PROMPT '-- (ALTER TABLE) Add Constraints for this table --'
 ------------------------------------------------------------------
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_pk PRIMARY KEY (Code) USING INDEX;
 
--- ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_uk1 UNIQUE (ColumnNameUK1, ColumnNameUK2) USING INDEX;
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_uk1 UNIQUE (eid) USING INDEX;
 
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c1 CHECK (archive IN (0, -1));
 
 -- ALTER TABLE Fin_Securities DROP CONSTRAINT Fin_Securities_c2;
-ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (Price_Frequency IN ('Y', 'Q', 'M', 'W', 'D', 'H', 'I', 'S'));
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (Frequency IN ('Y', 'Q', 'M', 'W', 'D', 'H', 'I', 'S'));
 
 -- ALTER TABLE Fin_Securities DROP CONSTRAINT Fin_Securities_c3;
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (REGEXP_LIKE(Code, '^[0-9A-Z]+\.*[0-9A-Z]+$'));
 
--- ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c4 CHECK (ColumnName [<|>|=|!=] Value);
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c4 CHECK (Series_Table IN ('Events', 'Price', 'HistValues'));
 
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
@@ -330,32 +341,32 @@ ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk3 FOREIGN KEY (Exchan
 PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
 ------------------------------------------------------------------
 -- -- Simple Create Sequence:
--- CREATE SEQUENCE Fin_Securities_sq 
--- MINVALUE 1 MAXVALUE 9999999999999999999999999999 
--- INCREMENT BY 1 START WITH 1 CACHE 10 NOORDER NOCYCLE;
+--CREATE SEQUENCE Fin_Securities_sq 
+--MINVALUE 1 MAXVALUE 9999999999999999999999999999 
+--INCREMENT BY 1 START WITH 1 CACHE 10 NOORDER NOCYCLE;
 
--- -- Rebuild the sequence from table max value:
--- SET SERVEROUTPUT ON
--- DECLARE
---     v_START_WITH NUMBER := 1;
---     v_Fin_Securities VARCHAR2(30) := 'Fin_Securities';
--- BEGIN
---     BEGIN
---         EXECUTE IMMEDIATE 'SELECT max(NVL(id,0))+1 FROM dual LEFT JOIN '||v_Fin_Securities||' ON (1=1)' INTO v_START_WITH;
---         DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Securities||'_sq START_WITH='||v_START_WITH);
---     EXCEPTION WHEN OTHERS THEN
---         DBMS_OUTPUT.PUT_LINE(SQLERRM);
---     END;
---     BEGIN
---         EXECUTE IMMEDIATE 'DROP SEQUENCE '||v_Fin_Securities||'_sq';
---         DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Securities||'_sq DROPPED');
---     EXCEPTION WHEN OTHERS THEN
---         NULL;
---     END;
---     EXECUTE IMMEDIATE 'CREATE SEQUENCE '||v_Fin_Securities||'_sq MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH '||v_START_WITH||' CACHE 10 NOORDER NOCYCLE';
---     DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Securities||'_sq CREATED');
--- END;
--- /
+-- Rebuild the sequence from table max value:
+SET SERVEROUTPUT ON
+DECLARE
+    v_START_WITH NUMBER := 1;
+    v_Fin_Securities VARCHAR2(30) := 'Fin_Securities';
+BEGIN
+    BEGIN
+        EXECUTE IMMEDIATE 'SELECT max(NVL(eid,0))+1 FROM dual LEFT JOIN '||v_Fin_Securities||' ON (1=1)' INTO v_START_WITH;
+        DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Securities||'_sq START_WITH='||v_START_WITH);
+    EXCEPTION WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+    END;
+    BEGIN
+        EXECUTE IMMEDIATE 'DROP SEQUENCE '||v_Fin_Securities||'_sq';
+        DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Securities||'_sq DROPPED');
+    EXCEPTION WHEN OTHERS THEN
+        NULL;
+    END;
+    EXECUTE IMMEDIATE 'CREATE SEQUENCE '||v_Fin_Securities||'_sq MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH '||v_START_WITH||' CACHE 10 NOORDER NOCYCLE';
+    DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Securities||'_sq CREATED');
+END;
+/
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
@@ -374,6 +385,9 @@ BEGIN
 
     -- Onle set Created when INSERTING
     IF INSERTING THEN
+        IF (:NEW.eid IS NULL) THEN
+            SELECT Fin_Securities_sq.NEXTVAL INTO :NEW.eid FROM dual; 
+        END IF;
         -- Allow Created_Dt, Created_By to be set in the insert statement
         IF (:NEW.Created_Dt IS NULL) THEN
             :NEW.Created_Dt := sysdate;

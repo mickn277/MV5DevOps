@@ -22,30 +22,31 @@
 /*
 WITH fks AS (
 SELECT 
-  LOWER(rgcl.constraint_name) REFRENCING_CONSTRAINT_NAME,
-  LOWER(rgcl.table_name) REFRENCING_TABLE_NAME,
-  LOWER(rgcl.column_name) REFRENCING_COLUMN_NAME,  
-  LOWER(rdcn.table_name) REFRENCED_TABLE_NAME,
-  LOWER(rdcl.column_name) REFERENCED_COLUMN_NAME,
+    LOWER(rgcl.constraint_name) REFRENCING_CONSTRAINT_NAME,
+    LOWER(rgcl.table_name) REFRENCING_TABLE_NAME,
+    LOWER(rgcl.column_name) REFRENCING_COLUMN_NAME,  
+    LOWER(rdcn.table_name) REFRENCED_TABLE_NAME,
+    LOWER(rdcl.column_name) REFERENCED_COLUMN_NAME,
 DECODE(rgcn.delete_rule,'CASCADE','ON DELETE CASCADE','SET NULL','ON DELETE SET NULL',NULL,NULL,'ERROR '||rgcn.delete_rule) REFERENCE_OPTIONS
 FROM all_cons_columns rgcl
-  JOIN all_constraints rgcn ON rgcl.owner = rgcn.owner AND rgcl.constraint_name = rgcn.constraint_name
-  JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
-  JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
+    JOIN all_constraints rgcn ON rgcl.owner = rgcn.owner AND rgcl.constraint_name = rgcn.constraint_name
+    JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
+    JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
 WHERE rdcn.owner = USER 
-  AND rdcn.table_name = UPPER('GEO_Currencies')
-  AND rgcn.constraint_type = 'R'
+    AND rdcn.table_name = UPPER('GEO_Currencies')
+    --AND rgcl.table_name != rdcn.table_name
+    AND rgcn.constraint_type = 'R'
 )SELECT sqlstmt FROM (
-SELECT 1 ORD, '-- Alter REFERENCING tables, add Foreign Key Constraints'  SQLSTMT FROM dual
+SELECT 1 ORD, '    -- Alter REFERENCING tables, add Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
-SELECT 2 ORD, ' ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' DROP CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||''');' SQLSTMT FROM fks
+SELECT 2 ORD, '    ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' DROP CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||''');' SQLSTMT FROM fks
 UNION 
 SELECT 3 ORD, NULL  SQLSTMT FROM dual
 UNION
-SELECT 4 ORD, '-- Alter REFERENCING tables DROP Foreign Key Constraints'  SQLSTMT FROM dual
+SELECT 4 ORD, '    -- Alter REFERENCING tables DROP Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
-SELECT 5 ORD, ' ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' ADD CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||' FOREIGN KEY ('||REFRENCING_COLUMN_NAME||') REFERENCES '||REFRENCED_TABLE_NAME||' ('||REFERENCED_COLUMN_NAME||') '||REFERENCE_OPTIONS||''');' SQLSTMT FROM fks
-)ORDER BY ord;
+SELECT 5 ORD, '    ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' ADD CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||' FOREIGN KEY ('||REFRENCING_COLUMN_NAME||') REFERENCES '||REFRENCED_TABLE_NAME||' ('||REFERENCED_COLUMN_NAME||') '||REFERENCE_OPTIONS||''');' SQLSTMT FROM fks
+) ORDER BY ord, sqlstmt;
 */
 
 --BugFix: Don't scan for substitution variables like ampersand in SQLDeveloper:
@@ -117,7 +118,8 @@ DECLARE
   END;
 BEGIN
     ExecSQL('ALTER TABLE fin_securities DROP CONSTRAINT fin_securities_fk2');
-    ExecSQL('ALTER TABLE fin_security_exchanges DROP CONSTRAINT fin_security_exchanges_fk1');
+    --ExecSQL('ALTER TABLE fin_security_exchanges DROP CONSTRAINT fin_security_exchanges_fk1');
+    ExecSQL('ALTER TABLE geo_currencies DROP CONSTRAINT geo_currencies_fk1');
     ExecSQL('ALTER TABLE geo_places DROP CONSTRAINT geo_places_fk3');
 END;
 /
@@ -140,7 +142,7 @@ BEGIN
 -- REVOKE ... Dropped when table is dropped.
 -- DROP TRIGGER ... Dropped when table is dropped.
 -- DROP INDEX  ... Dropped when table is dropped.
-	ExecSql('DROP SEQUENCE GEO_Currencies_sq');
+	--ExecSql('DROP SEQUENCE GEO_Currencies_sq');
 	ExecSql('DROP TABLE GEO_Currencies');
 END;
 /
@@ -187,12 +189,16 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 CREATE TABLE GEO_Currencies (
     -- Primary Key Column
     Code CHAR(3) NOT NULL,
-    --Place_Code VARCHAR2(6) NOT NULL,
+    ReplacedBy_Code CHAR(3),
+    ReplacedBy_Ratio NUMBER(12,6),
+    ReplacedBy_Date DATE,
     -- Standard Columns
-    Currency_Name VARCHAR2(100) NOT NULL,
+    Currency_Name VARCHAR2(50) NOT NULL,
+    -- 
+    Descripton VARCHAR2(255),
     --
-    Currency_Start_Dt DATE,
-    Currency_End_Dt DATE,
+    Start_Dt DATE,
+    End_Dt DATE,
     -- Foreign Key Columns:
     Sourced_From VARCHAR2(255),
     -- Standard auditing columns (Use 2nd trigger definition):
@@ -218,7 +224,7 @@ COMMENT ON COLUMN GEO_Currencies.Code IS 'PK';
 
 -- COMMENT ON COLUMN GEO_Currencies.ColumnNameUK1 IS '';
 -- COMMENT ON COLUMN GEO_Currencies.ColumnNameUK2 IS '';
--- COMMENT ON COLUMN GEO_Currencies.ColumnNameFK1 IS '';
+COMMENT ON COLUMN GEO_Currencies.ReplacedBy_Code IS 'FK';
 -- COMMENT ON COLUMN GEO_Currencies.ColumnNameFK2 IS '';
 
 COMMENT ON COLUMN GEO_Currencies.Created_By IS 'Auditing column';
@@ -262,7 +268,7 @@ CREATE UNIQUE INDEX GEO_Currencies_pk ON GEO_Currencies (Code);
 --CREATE INDEX GEO_Currencies_ix1 ON GEO_Currencies (place_code);
 
 -- Foreign Key Index 2
--- CREATE INDEX GEO_Currencies_ix2 ON GEO_Currencies (ColumnNameFK2);
+CREATE INDEX GEO_Currencies_ix2 ON GEO_Currencies (ReplacedBy_Code);
 
 -- Tuning Index 3
 -- CREATE INDEX GEO_Currencies_ix3 ON GEO_Currencies (ColumnName, ColumnName) [TABLESPACE TablespaceName_index];
@@ -289,7 +295,7 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 --  If you want any records in ReferencedTableName(n) to delete records without deleting records in GEO_Currencies, use "ON DELETE SET NULL".
 --  If you want GEO_Currencies to lock ReferencedTableName(n) from deleting records, leave blank.
 ------------------------------------------------------------------
---ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk1 FOREIGN KEY (place_code) REFERENCES GEO_Places (Code) ON DELETE SET NULL;
+ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk1 FOREIGN KEY (ReplacedBy_Code) REFERENCES GEO_Currencies (Code) ON DELETE SET NULL;
 
 -- ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk2 FOREIGN KEY (ColumnNameFK2) REFERENCES ReferencedTableName2 (ReferencedPK2) [ON DELETE CASCADE];
 
@@ -314,6 +320,8 @@ DECLARE
     v_Changed_By VARCHAR2(100);
 BEGIN
     v_Changed_By := ChangedBy_fn;
+    
+    :NEW.Code := UPPER(TRIM(:NEW.Code));
     
     -- Onle set Created when INSERTING
     IF INSERTING THEN
@@ -377,7 +385,7 @@ DECLARE
 BEGIN
     ExecSQL('ALTER TABLE geo_places ADD CONSTRAINT geo_places_fk3 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
     ExecSQL('ALTER TABLE fin_securities ADD CONSTRAINT fin_securities_fk2 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
-    ExecSQL('ALTER TABLE fin_security_exchanges ADD CONSTRAINT fin_security_exchanges_fk1 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
+    --ExecSQL('ALTER TABLE fin_security_exchanges ADD CONSTRAINT fin_security_exchanges_fk1 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
 END;
 /
 

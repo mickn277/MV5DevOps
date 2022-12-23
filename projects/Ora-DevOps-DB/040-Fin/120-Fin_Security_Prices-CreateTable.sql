@@ -208,7 +208,8 @@ CREATE TABLE Fin_Security_Prices (
     Low NUMBER(12,6),
     Close NUMBER(12,6) NOT NULL,
     Volume NUMBER(12),
-    Open_Interest NUMBER(12)
+    Open_Interest NUMBER(12),
+    comments VARCHAR2(50)
 )
 PCTFREE 1 PCTUSED 20
 COMPRESS FOR ALL OPERATIONS
@@ -235,7 +236,7 @@ PARTITION BY RANGE (Security_Code)
 ;
 
 /*
-ALTER TABLE Fin_Security_Prices ADD (Open_Interest NUMBER(12));
+ALTER TABLE Fin_Security_Prices ADD (comments VARCHAR2(50));
 */
 
 ------------------------------------------------------------------

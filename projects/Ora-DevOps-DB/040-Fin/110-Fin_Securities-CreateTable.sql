@@ -318,7 +318,7 @@ ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c1 CHECK (archive IN (0
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (Frequency IN ('Y', 'Q', 'M', 'W', 'D', 'H', 'I', 'S'));
 
 -- ALTER TABLE Fin_Securities DROP CONSTRAINT Fin_Securities_c3;
-ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (REGEXP_LIKE(Code, '^[0-9A-Z]+\.*[0-9A-Z]+\.*[0-9A-Z]+$'));
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (REGEXP_LIKE(Code, '^[0-9A-Z]+\.*[0-9A-Z\-]+\.*[0-9A-Z]+$'));
 
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c4 CHECK (Series_Table IN ('Events', 'Price', 'HistValues'));
 

@@ -2,9 +2,10 @@
 -- Usage:
 --
 -- Purpose:
---  This script creates new table GEO_Currencies, a new table in the database.
---  Foreign Keys on this new table GEO_Currencies reference ReferencedTableName1, ReferencedTableName2 etc.
---
+--  This script creates table Fin_Security_GICS, a new table in the database.
+--  Foreign Keys on this table Fin_Security_GICS reference ReferencedTableName1, ReferencedTableName2 etc.
+--  Foreign Keys on Fin_Securities, ReferencingTableName2 reference this table Fin_Security_GICS.
+--  
 -- Requirements & Known Issues:
 --
 -- Keywords (Tech, Business, etc):
@@ -33,22 +34,24 @@ FROM all_cons_columns rgcl
     JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
     JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
 WHERE rdcn.owner = USER 
-    AND rdcn.table_name = UPPER('GEO_Currencies')
-    --AND rgcl.table_name != rdcn.table_name
+    AND rdcn.table_name = UPPER('Fin_Security_GICS')
+    AND rgcl.table_name != rdcn.table_name
     AND rgcn.constraint_type = 'R'
 )SELECT sqlstmt FROM (
-SELECT 1 ORD, '    -- Alter REFERENCING tables, add Foreign Key Constraints'  SQLSTMT FROM dual
+SELECT 1 ORD, '-- Alter REFERENCING tables, add Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
 SELECT 2 ORD, '    ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' DROP CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||''');' SQLSTMT FROM fks
 UNION 
 SELECT 3 ORD, NULL  SQLSTMT FROM dual
 UNION
-SELECT 4 ORD, '    -- Alter REFERENCING tables DROP Foreign Key Constraints'  SQLSTMT FROM dual
+SELECT 4 ORD, '-- Alter REFERENCING tables DROP Foreign Key Constraints'  SQLSTMT FROM dual
 UNION
 SELECT 5 ORD, '    ExecSQL(''ALTER TABLE '||REFRENCING_TABLE_NAME||' ADD CONSTRAINT '||REFRENCING_CONSTRAINT_NAME||' FOREIGN KEY ('||REFRENCING_COLUMN_NAME||') REFERENCES '||REFRENCED_TABLE_NAME||' ('||REFERENCED_COLUMN_NAME||') '||REFERENCE_OPTIONS||''');' SQLSTMT FROM fks
 ) ORDER BY ord, sqlstmt;
 */
 
+-- Enable output from DBMS_OUTPUT
+SET SERVEROUTPUT ON
 --BugFix: Don't scan for substitution variables like ampersand in SQLDeveloper:
 SET SCAN OFF
 --BugFix: Oracle 11g hangs creating a trigger:
@@ -64,38 +67,47 @@ COLUMN refrencing_table_column_name FORMAT A50
 COLUMN refrenced_table_column_name FORMAT A50
 COLUMN reference_options FORMAT A18
 
---PROMPT 'Comment out QUIT; to enable this script.  Make sure script has been tested in development before using in production!'
---QUIT;
+DECLARE
+    v_Exists NUMBER(1) := 0;
+BEGIN 
+    SELECT DECODE(table_name, null, 0, -1) TABLE_EXISTS INTO V_Exists FROM dual LEFT JOIN user_tables ON (table_name=UPPER('Fin_Security_GICS'));
+    IF (v_Exists=-1) THEN
+        DBMS_OUTPUT.PUT_LINE('Uncomment "QUIT;" to disable script after creating table in PROD to prevent script from dropping tables in PROD!');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Always test in DEV before using in PROD, comment out "QUIT;" here to enable script to run in DEV and PROD!');
+    END IF;
+END;
+/
 
 ------------------------------------------------------------------
 PROMPT '==================== Describe TABLE(S) before rollback ===================='
 ------------------------------------------------------------------
 
 -- --------------------
-PROMPT 'GEO_Currencies'
+PROMPT 'Fin_Security_GICS'
 -- --------------------
 SELECT column_name "Name",
- data_type||'('||NVL(data_precision,data_length)||DECODE(NVL(data_scale,-1),-1,'',','||data_scale)||')' "Type",
- DECODE(nullable, 'N', 'NOT NULL', ' ') "Null"
+    data_type||'('||NVL(data_precision,data_length)||DECODE(NVL(data_scale,-1),-1,'',','||data_scale)||')' "Type",
+    DECODE(nullable, 'N', 'NOT NULL', ' ') "Null"
 FROM user_tab_columns
-WHERE table_name = UPPER('GEO_Currencies')
+WHERE table_name = UPPER('Fin_Security_GICS')
 ORDER BY table_name, column_id;
 
 -- --------------------
-PROMPT 'Constraints on GEO_Currencies'
+PROMPT 'Constraints on Fin_Security_GICS'
 -- --------------------
 SELECT 
-  rgcl.constraint_name REFRENCING_CONSTRAINT_NAME,
-  rgcl.table_name||'.'||rgcl.column_name REFRENCING_TABLE_COLUMN_NAME,
-  rdcn.table_name||'.'||rdcl.column_name REFRENCED_TABLE_COLUMN_NAME,
+    rgcl.constraint_name REFRENCING_CONSTRAINT_NAME,
+    rgcl.table_name||'.'||rgcl.column_name REFRENCING_TABLE_COLUMN_NAME,
+    rdcn.table_name||'.'||rdcl.column_name REFRENCED_TABLE_COLUMN_NAME,
 DECODE(rgcn.delete_rule,'CASCADE','ON DELETE CASCADE','SET NULL','ON DELETE SET NULL',NULL,NULL,'ERROR '||rgcn.delete_rule) REFERENCE_OPTIONS
 FROM all_cons_columns rgcl
-  JOIN all_constraints rgcn ON rgcl.owner = rgcn.owner AND rgcl.constraint_name = rgcn.constraint_name
-  JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
-  JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
+    JOIN all_constraints rgcn ON rgcl.owner = rgcn.owner AND rgcl.constraint_name = rgcn.constraint_name
+    JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
+    JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
 WHERE rdcn.owner = USER 
-  AND rdcn.table_name = UPPER('GEO_Currencies')
-  AND rgcn.constraint_type = 'R' 
+    AND rdcn.table_name = UPPER('Fin_Security_GICS')
+    AND rgcn.constraint_type = 'R' 
 ORDER BY rgcl.table_name, rgcl.column_name;
 
 ------------------------------------------------------------------
@@ -109,18 +121,16 @@ PROMPT '-- (DROP REFERENCING FOREIGN KEY CONSTRAINTS) Drop constraints created i
 --  Don't add/remove other tables indexes, just constraints on this table
 ------------------------------------------------------------------
 DECLARE
-  PROCEDURE ExecSql(p_SQL VARCHAR2) IS
-  BEGIN
-      EXECUTE IMMEDIATE p_SQL;
-  EXCEPTION WHEN OTHERS THEN 
-    IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
-    RAISE;
-  END;
+    PROCEDURE ExecSql(p_SQL VARCHAR2) IS
+    BEGIN
+        EXECUTE IMMEDIATE p_SQL;
+        DBMS_OUTPUT.PUT_LINE('Executed: '||p_SQL);
+    EXCEPTION WHEN OTHERS THEN 
+        IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
+        RAISE;
+    END;
 BEGIN
-    ExecSQL('ALTER TABLE fin_securities DROP CONSTRAINT fin_securities_fk2');
-    --ExecSQL('ALTER TABLE fin_security_exchanges DROP CONSTRAINT fin_security_exchanges_fk1');
-    ExecSQL('ALTER TABLE geo_currencies DROP CONSTRAINT geo_currencies_fk1');
-    ExecSQL('ALTER TABLE geo_places DROP CONSTRAINT geo_places_fk3');
+    ExecSQL('ALTER TABLE fin_securities DROP CONSTRAINT fin_securities_fk4');
 END;
 /
 
@@ -129,21 +139,18 @@ PROMPT '-- (DROP OBJECTS) Drop objects created in CREATE TABLE section --'
 ------------------------------------------------------------------
 
 DECLARE
-  v_IsDev NUMBER(1) := 0;
-  
-  PROCEDURE ExecSql(p_SQL VARCHAR2) IS
-  BEGIN
-      EXECUTE IMMEDIATE p_SQL;
-  EXCEPTION WHEN OTHERS THEN 
-    IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
-    RAISE;
-  END;
+    v_IsDev NUMBER(1) := 0;
+    
+    PROCEDURE ExecSql(p_SQL VARCHAR2) IS
+    BEGIN
+        EXECUTE IMMEDIATE p_SQL;
+        DBMS_OUTPUT.PUT_LINE('Executed: '||p_SQL);
+    EXCEPTION WHEN OTHERS THEN 
+        IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
+        RAISE;
+    END;
 BEGIN
--- REVOKE ... Dropped when table is dropped.
--- DROP TRIGGER ... Dropped when table is dropped.
--- DROP INDEX  ... Dropped when table is dropped.
-	--ExecSql('DROP SEQUENCE GEO_Currencies_sq');
-	ExecSql('DROP TABLE GEO_Currencies');
+	ExecSql('DROP TABLE Fin_Security_GICS');
 END;
 /
 
@@ -151,15 +158,19 @@ END;
 PROMPT '==================== Describe TABLE(S) after rollback ===================='
 ------------------------------------------------------------------
 -- --------------------
-PROMPT 'GEO_Currencies'
+PROMPT 'Fin_Security_GICS'
 -- --------------------
-SELECT CASE WHEN table_name IS NULL THEN 'SUCCESS - Table dropped' ELSE 'ERROR '||LOWER(table_name)||' exists' END TABLE_DROPPED
-FROM user_tables JOIN dual ON (1=1)
-WHERE table_name = UPPER('GEO_Currencies')
-ORDER BY table_name;
-
--- Uncomment 'QUIT;' to just rollback changes made by this script.
--- QUIT;
+DECLARE
+    v_Exists NUMBER(1) := 0;
+BEGIN
+    SELECT DECODE(table_name, null, 0, -1) TABLE_EXISTS INTO V_Exists FROM dual LEFT JOIN user_tables ON (table_name=UPPER('Fin_Security_GICS'));
+    IF (v_Exists=-1) THEN
+        DBMS_OUTPUT.PUT_LINE('Uncomment "QUIT;" to disable script after creating table in PROD to prevent script from dropping tables in PROD!');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Always test in DEV before using in PROD, comment out "QUIT;" here to enable script to run in DEV and PROD!');
+    END IF;
+END;
+/
 
 ------------------------------------------------------------------
 PROMPT '==================== Create TABLE ===================='
@@ -186,63 +197,65 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 --   COMPRESS FOR ALL OPERATIONS
 ------------------------------------------------------------------
 
-CREATE TABLE GEO_Currencies (
+CREATE TABLE Fin_Security_GICS (
     -- Primary Key Column
-    Code CHAR(3) NOT NULL,
-    ReplacedBy_Code CHAR(3),
-    ReplacedBy_Ratio NUMBER(12,6),
-    ReplacedBy_Date DATE,
-    -- Standard Columns
-    Currency_Name VARCHAR2(50) NOT NULL,
-    -- 
-    Description VARCHAR2(255),
-    --
-    Start_Dt DATE,
-    End_Dt DATE,
-    -- Foreign Key Columns:
-    Sourced_From VARCHAR2(255),
+    code VARCHAR2(8) NOT NULL,
+    -- Columns
+    Parent_Code VARCHAR2(8),
+    Short_Desc VARCHAR2(60) NOT NULL,
+    GICS_Group VARCHAR2(15) NOT NULL,
+    GICS_Group_Level GENERATED ALWAYS AS (DECODE(GICS_Group, 'Sector', 1, 'Industry Group', 2, 'Industry', 3, 'Sub-Industry', 4, -1)) VIRTUAL,
+    Description VARCHAR2(600),
+    Notes VARCHAR2(100),
     -- Standard auditing columns (Use 2nd trigger definition):
     Created_Dt DATE NOT NULL,
     Created_By VARCHAR2(100),
     Changed_Dt DATE,
-    Changed_By VARCHAR2(100))
-PCTFREE 20 PCTUSED 40
+    Changed_By VARCHAR2(100),
+    archive NUMBER(1,0) NOT NULL)
+PCTFREE 10 PCTUSED 40
 COMPRESS FOR ALL OPERATIONS
 ;
+
+ALTER TABLE Fin_Security_GICS ADD (
+    GICS_Group_Level GENERATED ALWAYS AS (DECODE(GICS_Group, 'Sector', 1, 'Industry Group', 2, 'Industry', 3, 'Sub-Industry', 4, -1)) VIRTUAL
+);
+
 
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
 -- NOTE:
 --  Oracle ApEX uses column comments as the Help Text by default.
 ------------------------------------------------------------------
-COMMENT ON TABLE GEO_Currencies IS '';
+COMMENT ON TABLE Fin_Security_GICS IS '';
 
 -- Run this after creating the table to generate a list of table column comments:
---SELECT '-- COMMENT ON COLUMN '||LOWER(table_name)||'.'||LOWER(column_name)||' IS '''';' "STATEMENTS" FROM user_tab_columns WHERE table_name = UPPER('GEO_Currencies');
+--SELECT '-- COMMENT ON COLUMN '||LOWER(table_name)||'.'||LOWER(column_name)||' IS '''';' "STATEMENTS" FROM user_tab_columns WHERE table_name = UPPER('Fin_Security_GICS');
 
-COMMENT ON COLUMN GEO_Currencies.Code IS 'PK';
+COMMENT ON COLUMN Fin_Security_GICS.code IS 'PK';
 
--- COMMENT ON COLUMN GEO_Currencies.ColumnNameUK1 IS '';
--- COMMENT ON COLUMN GEO_Currencies.ColumnNameUK2 IS '';
-COMMENT ON COLUMN GEO_Currencies.ReplacedBy_Code IS 'FK';
--- COMMENT ON COLUMN GEO_Currencies.ColumnNameFK2 IS '';
+-- COMMENT ON COLUMN Fin_Security_GICS.ColumnNameUK1 IS 'UK 1of2';
+-- COMMENT ON COLUMN Fin_Security_GICS.ColumnNameUK2 IS 'UK 2of2';
+-- COMMENT ON COLUMN Fin_Security_GICS.ColumnNameFK1 IS 'FK1';
+-- COMMENT ON COLUMN Fin_Security_GICS.ColumnNameFK2 IS 'FK2';
 
-COMMENT ON COLUMN GEO_Currencies.Created_By IS 'Auditing column';
-COMMENT ON COLUMN GEO_Currencies.Created_Dt IS 'Auditing column';
-COMMENT ON COLUMN GEO_Currencies.Changed_By IS 'Auditing column';
-COMMENT ON COLUMN GEO_Currencies.Changed_Dt IS 'Auditing column';
+COMMENT ON COLUMN Fin_Security_GICS.Created_By IS 'Auditing column';
+COMMENT ON COLUMN Fin_Security_GICS.Created_Dt IS 'Auditing column';
+COMMENT ON COLUMN Fin_Security_GICS.Changed_By IS 'Auditing column';
+COMMENT ON COLUMN Fin_Security_GICS.Changed_Dt IS 'Auditing column';
 
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add the Column Defaults for this table --'
 ------------------------------------------------------------------
--- ALTER TABLE GEO_Currencies  MODIFY (Code DEFAULT 0);
+-- ALTER TABLE Fin_Security_GICS  MODIFY (code DEFAULT 0);
 
--- ALTER TABLE GEO_Currencies  MODIFY (ColumnNameUK1 DEFAULT 0);
--- ALTER TABLE GEO_Currencies  MODIFY (ColumnNameUK2 DEFAULT 0);
--- ALTER TABLE GEO_Currencies  MODIFY (ColumnNameFK1 DEFAULT 0);
--- ALTER TABLE GEO_Currencies  MODIFY (ColumnNameFK2 DEFAULT 0);
+-- ALTER TABLE Fin_Security_GICS  MODIFY (ColumnNameUK1 DEFAULT 0);
+-- ALTER TABLE Fin_Security_GICS  MODIFY (ColumnNameUK2 DEFAULT 0);
+-- ALTER TABLE Fin_Security_GICS  MODIFY (ColumnNameFK1 DEFAULT 0);
+-- ALTER TABLE Fin_Security_GICS  MODIFY (ColumnNameFK2 DEFAULT 0);
 
--- ALTER TABLE GEO_Currencies  MODIFY (Created_Dt DEFAULT sysdate);
+ALTER TABLE Fin_Security_GICS  MODIFY (Created_Dt DEFAULT sysdate);
+ALTER TABLE Fin_Security_GICS  MODIFY (archive DEFAULT 0);
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE INDEX) Create Index for this table --'
@@ -259,30 +272,33 @@ PROMPT '-- (CREATE INDEX) Create Index for this table --'
 --
 ------------------------------------------------------------------
 -- Primary Key Index
-CREATE UNIQUE INDEX GEO_Currencies_pk ON GEO_Currencies (Code);
+CREATE UNIQUE INDEX Fin_Security_GICS_pk ON Fin_Security_GICS (code);
 
 -- Unique Key Index 1
--- CREATE UNIQUE INDEX GEO_Currencies_uk1 ON GEO_Currencies (ColumnNameUK1, ColumnNameUK2);
+-- CREATE UNIQUE INDEX Fin_Security_GICS_uk1 ON Fin_Security_GICS (ColumnNameUK1, ColumnNameUK2);
 
 -- Foreign Key Index 1
---CREATE INDEX GEO_Currencies_ix1 ON GEO_Currencies (place_code);
+CREATE INDEX Fin_Security_GICS_ix1 ON Fin_Security_GICS (Parent_Code);
 
 -- Foreign Key Index 2
-CREATE INDEX GEO_Currencies_ix2 ON GEO_Currencies (ReplacedBy_Code);
+-- CREATE INDEX Fin_Security_GICS_ix2 ON Fin_Security_GICS (ColumnNameFK2);
 
 -- Tuning Index 3
--- CREATE INDEX GEO_Currencies_ix3 ON GEO_Currencies (ColumnName, ColumnName) [TABLESPACE TablespaceName_index];
+-- CREATE INDEX Fin_Security_GICS_ix3 ON Fin_Security_GICS (ColumnName, ColumnName) [TABLESPACE TablespaceName_index];
 
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add Constraints for this table --'
 ------------------------------------------------------------------
-ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_pk PRIMARY KEY (Code) USING INDEX;
+ALTER TABLE Fin_Security_GICS ADD CONSTRAINT Fin_Security_GICS_pk PRIMARY KEY (Code) USING INDEX;
 
--- ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_uk1 UNIQUE (ColumnNameUK1, ColumnNameUK2) USING INDEX;
+-- ALTER TABLE Fin_Security_GICS ADD CONSTRAINT Fin_Security_GICS_uk1 UNIQUE (ColumnNameUK1, ColumnNameUK2) USING INDEX;
 
--- ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_c1 CHECK (ColumnName IN ('Value1', 'Value2', 'Value3'));
+ALTER TABLE Fin_Security_GICS ADD CONSTRAINT Fin_Security_GICS_c1 CHECK (archive IN (0, -1));
 
--- ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_c2 CHECK (ColumnName [<|>|=|!=] Value);
+ALTER TABLE Fin_Security_GICS ADD CONSTRAINT Fin_Security_GICS_c2 CHECK (GICS_Group IN ('Sector', 'Industry Group', 'Industry', 'Sub-Industry'));
+
+
+-- ALTER TABLE Fin_Security_GICS ADD CONSTRAINT Fin_Security_GICS_c3 CHECK (ColumnName [<|>|=|!=] Value);
 
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
@@ -291,38 +307,56 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 --   tables section of the parent table.
 --  Lookup tables shouldn't cascade delete.
 --  Only set null if column allows nulls.
---  If you want any records in ReferencedTableName(n) to cascade delete records into GEO_Currencies, use "ON DELETE CASCADE".
---  If you want any records in ReferencedTableName(n) to delete records without deleting records in GEO_Currencies, use "ON DELETE SET NULL".
---  If you want GEO_Currencies to lock ReferencedTableName(n) from deleting records, leave blank.
+--  If you want any records in ReferencedTableName(n) to cascade delete records into Fin_Security_GICS, use "ON DELETE CASCADE".
+--  If you want any records in ReferencedTableName(n) to delete records without deleting records in Fin_Security_GICS, use "ON DELETE SET NULL".
+--  If you want Fin_Security_GICS to lock ReferencedTableName(n) from deleting records, leave blank.
 ------------------------------------------------------------------
-ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk1 FOREIGN KEY (ReplacedBy_Code) REFERENCES GEO_Currencies (Code) ON DELETE SET NULL;
-
--- ALTER TABLE GEO_Currencies ADD CONSTRAINT GEO_Currencies_fk2 FOREIGN KEY (ColumnNameFK2) REFERENCES ReferencedTableName2 (ReferencedPK2) [ON DELETE CASCADE];
+ALTER TABLE Fin_Security_GICS ADD CONSTRAINT Fin_Security_GICS_fk1 FOREIGN KEY (parent_Code) REFERENCES Fin_Security_GICS (Code) ON DELETE SET NULL;
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
 ------------------------------------------------------------------
---CREATE SEQUENCE GEO_Currencies_sq
---START WITH 1
---INCREMENT BY 1
---NOMAXVALUE
---NOCYCLE
---CACHE 10 -- This is the number of sequence numbers cached in memory and should be larger than the maximum number of sequence numbers used at any one time.
---/
+/*
+-- Simple Create Sequence:
+CREATE SEQUENCE Fin_Security_GICS_sq 
+MINVALUE 1 MAXVALUE 9999999999999999999999999999 
+INCREMENT BY 1 START WITH 1 CACHE 10 NOORDER NOCYCLE;
+
+-- Rebuild the sequence from table max value:
+SET SERVEROUTPUT ON
+DECLARE
+    v_START_WITH NUMBER := 1;
+    v_Fin_Security_GICS VARCHAR2(30) := 'Fin_Security_GICS';
+BEGIN
+    BEGIN
+        EXECUTE IMMEDIATE 'SELECT max(NVL(Code,0))+1 FROM dual LEFT JOIN '||v_Fin_Security_GICS||' ON (1=1)' INTO v_START_WITH;
+        DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Security_GICS||'_sq START_WITH='||v_START_WITH);
+    EXCEPTION WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+    END;
+    BEGIN
+        EXECUTE IMMEDIATE 'DROP SEQUENCE '||v_Fin_Security_GICS||'_sq';
+        DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Security_GICS||'_sq DROPPED');
+    EXCEPTION WHEN OTHERS THEN
+        NULL;
+    END;
+    EXECUTE IMMEDIATE 'CREATE SEQUENCE '||v_Fin_Security_GICS||'_sq MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH '||v_START_WITH||' CACHE 10 NOORDER NOCYCLE';
+    DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Security_GICS||'_sq CREATED');
+END;
+/
+*/
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
 -- NOTE:
 --  If the standard auditing columns Created_Dt, Created_By, Changed_Dt, Changed_By are used in the table, uncomment the 2nd Trigger.
 ------------------------------------------------------------------
-CREATE OR REPLACE TRIGGER GEO_Currencies_tr1 BEFORE INSERT OR UPDATE ON GEO_Currencies FOR EACH ROW
+CREATE OR REPLACE TRIGGER Fin_Security_GICS_tr1 BEFORE INSERT OR UPDATE ON Fin_Security_GICS FOR EACH ROW
 DECLARE
     v_Changed_By VARCHAR2(100);
 BEGIN
     v_Changed_By := ChangedBy_fn;
-    
-    :NEW.Code := UPPER(TRIM(:NEW.Code));
-    
+
     -- Onle set Created when INSERTING
     IF INSERTING THEN
         -- Allow Created_Dt, Created_By to be set in the insert statement
@@ -333,7 +367,7 @@ BEGIN
             :NEW.Created_By := v_Changed_By;
         END IF;
     END IF;
-    
+
     -- Only set Changed when UPDATING BugFix: Added OR because :NEW contains the old value for updates.
     IF UPDATING THEN
         -- Allow Changed_Dt, Changed_By to be set in the update statement
@@ -350,12 +384,12 @@ END;
 ------------------------------------------------------------------
 PROMPT '-- (INSERT INTO) Insert Values into this table --'
 ------------------------------------------------------------------
--- INSERT INTO GEO_Currencies (Code, ColumnNameUK1, ColumnNameUK2, ColumnNameFK1, ColumnNameFK2) VALUES (1, 0, '', 0, '');
--- INSERT INTO GEO_Currencies (Code, ColumnNameUK1, ColumnNameUK2, ColumnNameFK1, ColumnNameFK2) VALUES (2, 0, '', 0, '');
--- INSERT INTO GEO_Currencies (Code, ColumnNameUK1, ColumnNameUK2, ColumnNameFK1, ColumnNameFK2) VALUES (3, 0, '', 0, '');
--- COMMIT;
-
--- EXECUTE DBMS_STATS.GATHER_TABLE_STATS(ownname=>USER, tabname=>UPPER('GEO_Currencies'), cascade=>TRUE, estimate_percent=>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt=>'for all columns size auto');
+--INSERT INTO Fin_Security_GICS (Code, ColumnNameUK1, ColumnNameUK2, ColumnNameFK1, ColumnNameFK2) VALUES (1, 0, '', 0, '');
+--INSERT INTO Fin_Security_GICS (Code, ColumnNameUK1, ColumnNameUK2, ColumnNameFK1, ColumnNameFK2) VALUES (2, 0, '', 0, '');
+--INSERT INTO Fin_Security_GICS (Code, ColumnNameUK1, ColumnNameUK2, ColumnNameFK1, ColumnNameFK2) VALUES (3, 0, '', 0, '');
+--COMMIT;
+--
+--EXECUTE DBMS_STATS.GATHER_TABLE_STATS(ownname=>USER, tabname=>UPPER('Fin_Security_GICS'), cascade=>TRUE, estimate_percent=>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt=>'for all columns size auto');
 
 ------------------------------------------------------------------
 PROMPT '-- (GRANT privleges TO roles) --'
@@ -363,9 +397,9 @@ PROMPT '-- (GRANT privleges TO roles) --'
 --  Objects must individually have privliges granted against roles for users with the
 --  role to access them. This doesn't apply to the object owner, who can always access the objects.
 ------------------------------------------------------------------
--- GRANT SELECT ON GEO_Currencies TO ReadOnlyRole;
--- GRANT SELECT, DELETE, UPDATE, INSERT ON GEO_Currencies TO ReadWriteRole;
--- GRANT EXECUTE ON PackageName TO ReadWriteRole;
+--GRANT SELECT ON Fin_Security_GICS TO ReadOnlyRole;
+--GRANT SELECT, DELETE, UPDATE, INSERT ON Fin_Security_GICS TO ReadWriteRole;
+--GRANT EXECUTE ON PackageName TO ReadWriteRole;
 
 ------------------------------------------------------------------
 PROMPT '==================== Alter REFERENCING tables, Add Foreign Key Constraints ===================='
@@ -375,17 +409,15 @@ PROMPT '==================== Alter REFERENCING tables, Add Foreign Key Constrain
 -- Don't add/remove other tables indexes, just constraints on this table
 ------------------------------------------------------------------
 DECLARE
-  PROCEDURE ExecSql(p_SQL VARCHAR2) IS
-  BEGIN
-      EXECUTE IMMEDIATE p_SQL;
-  EXCEPTION WHEN OTHERS THEN 
-    IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
-    RAISE;
-  END;
+    PROCEDURE ExecSql(p_SQL VARCHAR2) IS
+    BEGIN
+        EXECUTE IMMEDIATE p_SQL;
+    EXCEPTION WHEN OTHERS THEN 
+        IF SQLCODE IN (-942,-1418,-1917,-2275,-2289,-2443,-4043,-12003,-38307) THEN RETURN; END IF; -- Errors for object does not exist
+        RAISE;
+    END;
 BEGIN
-    ExecSQL('ALTER TABLE geo_places ADD CONSTRAINT geo_places_fk3 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
-    ExecSQL('ALTER TABLE fin_securities ADD CONSTRAINT fin_securities_fk2 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
-    --ExecSQL('ALTER TABLE fin_security_exchanges ADD CONSTRAINT fin_security_exchanges_fk1 FOREIGN KEY (currency_code) REFERENCES geo_currencies (code) ON DELETE SET NULL');
+    ExecSQL('ALTER TABLE fin_securities ADD CONSTRAINT fin_securities_fk4 FOREIGN KEY (gics_code) REFERENCES fin_security_gics (code) ON DELETE SET NULL');
 END;
 /
 
@@ -393,29 +425,29 @@ END;
 PROMPT '==================== Describe TABLE(S) after changes ===================='
 ------------------------------------------------------------------
 -- --------------------
-PROMPT 'GEO_Currencies'
+PROMPT 'Fin_Security_GICS'
 -- --------------------
 SELECT column_name "Name",
- data_type||'('||NVL(data_precision,data_length)||DECODE(NVL(data_scale,-1),-1,'',','||data_scale)||')' "Type",
- DECODE(nullable, 'N', 'NOT NULL', ' ') "Null"
+    data_type||'('||NVL(data_precision,data_length)||DECODE(NVL(data_scale,-1),-1,'',','||data_scale)||')' "Type",
+    DECODE(nullable, 'N', 'NOT NULL', ' ') "Null"
 FROM user_tab_columns
-WHERE table_name = UPPER('GEO_Currencies')
+WHERE table_name = UPPER('Fin_Security_GICS')
 ORDER BY table_name, column_id;
 -- --------------------
-PROMPT 'Constraints on GEO_Currencies'
+PROMPT 'Constraints on Fin_Security_GICS'
 -- --------------------
 SELECT 
-  rgcl.constraint_name REFRENCING_CONSTRAINT_NAME,
-  rgcl.table_name||'.'||rgcl.column_name REFRENCING_TABLE_COLUMN_NAME,
-  rdcn.table_name||'.'||rdcl.column_name REFRENCED_TABLE_COLUMN_NAME,
+    rgcl.constraint_name REFRENCING_CONSTRAINT_NAME,
+    rgcl.table_name||'.'||rgcl.column_name REFRENCING_TABLE_COLUMN_NAME,
+    rdcn.table_name||'.'||rdcl.column_name REFRENCED_TABLE_COLUMN_NAME,
 DECODE(rgcn.delete_rule,'CASCADE','ON DELETE CASCADE','SET NULL','ON DELETE SET NULL',NULL,NULL,'ERROR '||rgcn.delete_rule) REFERENCE_OPTIONS
 FROM all_cons_columns rgcl
-  JOIN all_constraints rgcn ON rgcl.owner = rgcn.owner AND rgcl.constraint_name = rgcn.constraint_name
-  JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
-  JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
+    JOIN all_constraints rgcn ON rgcl.owner = rgcn.owner AND rgcl.constraint_name = rgcn.constraint_name
+    JOIN all_constraints rdcn ON rgcn.r_owner = rdcn.owner AND rgcn.r_constraint_name = rdcn.constraint_name
+    JOIN all_cons_columns rdcl ON rdcn.owner = rdcl.owner AND rdcn.constraint_name = rdcl.constraint_name
 WHERE rdcn.owner = USER 
-  AND rdcn.table_name = UPPER('GEO_Currencies')
-  AND rgcn.constraint_type = 'R' 
+    AND rdcn.table_name = UPPER('Fin_Security_GICS')
+    AND rgcn.constraint_type = 'R' 
 ORDER BY rgcl.table_name, rgcl.column_name;
 
 ------------------------------------------------------------------

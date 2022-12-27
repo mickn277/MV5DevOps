@@ -133,7 +133,6 @@ BEGIN
     ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk1');
     ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk2');
     ExecSQL('ALTER TABLE fin_events DROP CONSTRAINT fin_events_fk3');
-    ExecSQL('ALTER TABLE fin_security_histval DROP CONSTRAINT fin_security_histval_fk1');
     ExecSQL('ALTER TABLE fin_security_prices DROP CONSTRAINT fin_security_prices_fk1');
 END;
 /
@@ -204,7 +203,7 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 
 CREATE TABLE Fin_Securities (
     -- Primary Key Column
-    Code VARCHAR2(10) NOT NULL,
+    Code VARCHAR2(15) NOT NULL,
     EID NUMBER(11) NOT NULL,
     --
     Short_Desc VARCHAR2(50) NOT NULL,
@@ -216,7 +215,7 @@ CREATE TABLE Fin_Securities (
     Frequency CHAR(1) DEFAULT 'D' NOT NULL,
     --
     Description VARCHAR2(255),
-    Series_Table VARCHAR2(50),
+    --Series_Table VARCHAR2(50),
     -- Standard auditing columns (Use 2nd trigger definition):
     Created_Dt DATE NOT NULL,
     Created_By VARCHAR2(100),
@@ -228,18 +227,19 @@ COMPRESS FOR ALL OPERATIONS
 ;
 
 /*
-ALTER TABLE Fin_Securities MODIFY (
-    EID NUMBER(11) nOT NULL
+ALTER TABLE Fin_Securities ADD (
+    GICS_CODE VARCHAR2(8)
 );
 UPDATE Fin_Securities
 set Description = Comments
 ;
 commit;
-ALTER TABLE Fin_Securities ADD (
-    EID NUMBER(11)
+ALTER TABLE Fin_Securities DROP (
+    Series_Table
 );
-
 */
+
+
 
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
@@ -251,7 +251,7 @@ COMMENT ON TABLE Fin_Securities IS '';
 -- Run this after creating the table to generate a list of table column comments:
 --SELECT '-- COMMENT ON COLUMN '||LOWER(table_name)||'.'||LOWER(column_name)||' IS '''';' "STATEMENTS" FROM user_tab_columns WHERE table_name = UPPER('Fin_Securities');
 
-COMMENT ON COLUMN Fin_Securities.Code IS 'PK, should be [SECURITY].[EXCHANGE|PLACE], must start with 0-9 or A-Z.';
+COMMENT ON COLUMN Fin_Securities.Code IS 'PK, should be SECURITY[.<EXCHANGE>][.<PLACE|CURRENCY>], must start with 0-9 or A-Z.';
 
 -- COMMENT ON COLUMN Fin_Securities.ColumnNameUK1 IS 'UK 1of2';
 -- COMMENT ON COLUMN Fin_Securities.ColumnNameUK2 IS 'UK 2of2';
@@ -318,7 +318,16 @@ ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c1 CHECK (archive IN (0
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c2 CHECK (Frequency IN ('Y', 'Q', 'M', 'W', 'D', 'H', 'I', 'S'));
 
 -- ALTER TABLE Fin_Securities DROP CONSTRAINT Fin_Securities_c3;
-ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (REGEXP_LIKE(Code, '^[0-9A-Z]+\.*[0-9A-Z\-]+\.*[0-9A-Z]+$'));
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c3 CHECK (REGEXP_LIKE(Code, '^[0-9A-Z\-]+\.*[0-9A-Z\-]+\.*[0-9A-Z\-]+$'));
+
+/*
+SELECT 
+    CASE WHEN REGEXP_LIKE('ABC', '^[0-9A-Z]+\.*[0-9A-Z\-]+\.*[0-9A-Z]+$') THEN -1 ELSE 0 END TEST1,
+    CASE WHEN REGEXP_LIKE('abc.ASX', '^[0-9A-Z]+\.*[0-9A-Z\-]+\.*[0-9A-Z]+$') THEN -1 ELSE 0 END TEST2,
+    CASE WHEN REGEXP_LIKE('ABC.ASX', '^[0-9A-Z]+\.*[0-9A-Z\-]+\.*[0-9A-Z]+$') THEN -1 ELSE 0 END TEST3,
+    CASE WHEN REGEXP_LIKE('ABC.ASX.AUS', '^[0-9A-Z]+\.*[0-9A-Z\-]+\.*[0-9A-Z]+$') THEN -1 ELSE 0 END TEST4
+FROM dual;
+*/
 
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_c4 CHECK (Series_Table IN ('Events', 'Price', 'HistValues'));
 
@@ -336,6 +345,7 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk1 FOREIGN KEY (Place_Code) REFERENCES Geo_Places (Code) ON DELETE SET NULL;
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk2 FOREIGN KEY (Currency_Code) REFERENCES Geo_Currencies (Code) ON DELETE SET NULL;
 ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk3 FOREIGN KEY (Exchange_Code) REFERENCES Fin_Security_Exchanges (Code) ON DELETE SET NULL;
+ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk4 FOREIGN KEY (Gics_Code) REFERENCES Fin_Security_GICS (Code) ON DELETE SET NULL;
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
@@ -445,7 +455,6 @@ BEGIN
     ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE SET NULL');
     ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk2 FOREIGN KEY (security_code_2nd) REFERENCES fin_securities (code) ON DELETE SET NULL');
     ExecSQL('ALTER TABLE fin_events ADD CONSTRAINT fin_events_fk3 FOREIGN KEY (security_code_3rd) REFERENCES fin_securities (code) ON DELETE SET NULL');
-    ExecSQL('ALTER TABLE fin_security_histval ADD CONSTRAINT fin_security_histval_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE CASCADE');
     ExecSQL('ALTER TABLE fin_security_prices ADD CONSTRAINT fin_security_prices_fk1 FOREIGN KEY (security_code) REFERENCES fin_securities (code) ON DELETE CASCADE');
 END;
 /

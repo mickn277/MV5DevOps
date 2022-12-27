@@ -208,12 +208,12 @@ CREATE TABLE Fin_Events (
     -- Unique Key Columns
     Event_Dt DATE NOT NULL,
     Event_End_Dt DATE,
-    Short_Desc VARCHAR2(100) NOT NULL,
+    Short_Desc VARCHAR2(60) NOT NULL,
     Description VARCHAR2(4000),
     --
-    Security_Code VARCHAR2(10),
-    Security_Code_2nd VARCHAR2(10),
-    Security_Code_3rd VARCHAR2(10),
+    Security_Code VARCHAR2(15),
+    Security_Code_2nd VARCHAR2(15),
+    Security_Code_3rd VARCHAR2(15),
     --
     Place_Code VARCHAR2(6),
     Place_Code_2nd VARCHAR2(6),
@@ -233,9 +233,10 @@ COMPRESS FOR ALL OPERATIONS
 ;
 
 /*
-ALTER TABLE Fin_Events DROP(
-    Cause_2nd_ID,
-    Cause_3rd_ID
+ALTER TABLE Fin_Events MODIFY (
+        Security_Code VARCHAR2(15),
+    Security_Code_2nd VARCHAR2(15),
+    Security_Code_3rd VARCHAR2(15)
 );
 */
 ------------------------------------------------------------------
@@ -290,23 +291,23 @@ PROMPT '-- (CREATE INDEX) Create Index for this table --'
 -- Primary Key Index
 CREATE UNIQUE INDEX Fin_Events_pk ON Fin_Events (id);
 
--- Unique Key Index 1
--- CREATE UNIQUE INDEX Fin_Events_uk1 ON Fin_Events (Event_Dt, ColumnNameUK2);
-
--- Foreign Key Index 1
-CREATE INDEX Fin_Events_ix1 ON Fin_Events (Security_Code);
-CREATE INDEX Fin_Events_ix2 ON Fin_Events (Security_Code_2nd);
-CREATE INDEX Fin_Events_ix3 ON Fin_Events (Security_Code_3rd);
+-- Index 1
+CREATE INDEX Fin_Events_ix1 ON Fin_Events (Event_Dt);
 
 -- Foreign Key Index 2
+CREATE INDEX Fin_Events_ix2 ON Fin_Events (Security_Code);
+CREATE INDEX Fin_Events_ix3 ON Fin_Events (Security_Code_2nd);
+CREATE INDEX Fin_Events_ix4 ON Fin_Events (Security_Code_3rd);
+
+-- Foreign Key Index 6
 CREATE INDEX Fin_Events_ix6 ON Fin_Events (Place_Code);
 CREATE INDEX Fin_Events_ix7 ON Fin_Events (Place_Code_2nd);
 CREATE INDEX Fin_Events_ix8 ON Fin_Events (Place_Code_3rd);
 
--- Foreign Key Index 3
+-- Foreign Key Index 11
 CREATE INDEX Fin_Events_ix11 ON Fin_Events (Cause_ID);
 
--- Foreign Key Index 2
+-- Foreign Key Index 16
 CREATE INDEX Fin_Events_ix16 ON Fin_Events (Effect_ID);
 
 ------------------------------------------------------------------

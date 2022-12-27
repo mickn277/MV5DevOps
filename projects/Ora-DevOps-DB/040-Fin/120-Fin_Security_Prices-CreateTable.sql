@@ -135,6 +135,9 @@ PROMPT '-- (DROP REFERENCING FOREIGN KEY CONSTRAINTS) Drop constraints created i
 -- END;
 -- /
 
+--CREATE TABLE Fin_Security_Prices_bak AS 
+--SELECT * FROM Fin_Security_Prices;
+
 ------------------------------------------------------------------
 PROMPT '-- (DROP OBJECTS) Drop objects created in CREATE TABLE section --'
 ------------------------------------------------------------------
@@ -200,7 +203,7 @@ PROMPT '-- (CREATE TABLE) Create the table --'
 
 CREATE TABLE Fin_Security_Prices (
     -- Unique Key Columns
-    Security_Code VARCHAR2 (10) NOT NULL,
+    Security_Code VARCHAR2 (15) NOT NULL,
     Price_Dt DATE NOT NULL,
     --
     Open NUMBER(12,6),
@@ -237,6 +240,11 @@ PARTITION BY RANGE (Security_Code)
 
 /*
 ALTER TABLE Fin_Security_Prices ADD (comments VARCHAR2(50));
+
+ALTER TABLE Fin_Security_Prices MODIFY (
+    security_Code VARCHAR2(15)
+);
+
 */
 
 ------------------------------------------------------------------
@@ -274,6 +282,8 @@ PROMPT '-- (CREATE INDEX) Create Index for this table --'
 ------------------------------------------------------------------
 -- Primary Key Index
 CREATE UNIQUE INDEX Fin_Security_Prices_pk ON Fin_Security_Prices (Security_Code, Price_Dt) COMPRESS LOCAL;
+
+CREATE INDEX Fin_Security_Prices_ix1 ON Fin_Security_Prices (Price_Dt);
 
 ------------------------------------------------------------------
 PROMPT '-- (ALTER TABLE) Add Constraints for this table --'
@@ -352,7 +362,7 @@ END;
 ------------------------------------------------------------------
 PROMPT '-- (INSERT INTO) Insert Values into this table --'
 ------------------------------------------------------------------
---INSERT INTO Fin_Security_Prices(SELECT * FROM Fin_Security_HIST_Prices);
+--INSERT INTO Fin_Security_Prices(SELECT * FROM Fin_Security_Prices_bak);
 --COMMIT;
 --EXECUTE DBMS_STATS.GATHER_TABLE_STATS(ownname=>USER, tabname=>UPPER('Fin_Security_Prices'), cascade=>TRUE, estimate_percent=>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt=>'for all columns size auto');
 

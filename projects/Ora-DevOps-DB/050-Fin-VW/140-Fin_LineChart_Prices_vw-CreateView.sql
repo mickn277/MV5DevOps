@@ -1,10 +1,10 @@
 CREATE OR REPLACE VIEW Fin_LineChart_Prices_vw AS
 SELECT
-    p.security_code,
-    DECODE(s.frequency, 'Y', TO_CHAR(p.price_dt, 'YYYY'), 'M', TO_CHAR(p.price_dt, 'YYYY-DD'),  TO_CHAR(p.price_dt, 'YYYY-MM-DD')) PRICE_DT,
-    p.close,
+    s.code,
+    p.security_code||': '||s.short_desc SERIES_NAME,
+    DECODE(s.frequency, 'Y', TO_CHAR(p.price_dt, 'YYYY'), 'M', TO_CHAR(p.price_dt, 'YYYY-DD'),  TO_CHAR(p.price_dt, 'YYYY-MM-DD')) LABEL,
+    p.close VALUE,
     --Params2_pkg.GetNumber('fin_LineChart_Val_Colour') VAL_COLOUR,
-    'LABEL' LABEL,
     'CUSTOM_TOOLTIP'  CUSTOM_TOOLTIP,
     'LEGEND_TOOLTIP' LEGEND_TOOLTIP,
     'LABEL_TOOLTIP' LABEL_TOOLTIP,
@@ -12,7 +12,7 @@ SELECT
 FROM
     fin_securities s
     JOIN fin_security_prices p ON (p.security_code = s.code)
-WHERE archive != -1
+WHERE s.archive != -1
 ;
 
 /*

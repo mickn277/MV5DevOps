@@ -204,6 +204,7 @@ CREATE TABLE Fin_Security_Exchanges (
     Description VARCHAR2(4000),
     -- Foreign Key Columns:
     place_code VARCHAR2(6),
+    currency_code CHAR(3),
     -- Standard auditing columns (Use 2nd trigger definition):
     Created_Dt DATE NOT NULL,
     Created_By VARCHAR2(100),
@@ -213,6 +214,13 @@ CREATE TABLE Fin_Security_Exchanges (
 PCTFREE 10 PCTUSED 40
 COMPRESS FOR ALL OPERATIONS
 ;
+
+/* 
+ALTER TABLE Fin_Security_Exchanges ADD (
+    currency_code CHAR(3)  
+);
+
+*/
 
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
@@ -275,6 +283,8 @@ CREATE UNIQUE INDEX Fin_Security_Exchanges_pk ON Fin_Security_Exchanges (code);
 -- Foreign Key Index 2
 CREATE INDEX Fin_Security_Exchanges_ix2 ON Fin_Security_Exchanges (place_code);
 
+CREATE INDEX Fin_Security_Exchanges_ix3 ON Fin_Security_Exchanges (currency_code);
+
 -- Tuning Index 3
 -- CREATE INDEX Fin_Security_Exchanges_ix3 ON Fin_Security_Exchanges (ColumnName, ColumnName) [TABLESPACE TablespaceName_index];
 
@@ -303,8 +313,10 @@ PROMPT '-- (ALTER TABLE) Add the Foreign Keys for this table --'
 --  If you want Fin_Security_Exchanges to lock ReferencedTableName(n) from deleting records, leave blank.
 ------------------------------------------------------------------
 --ALTER TABLE Fin_Security_Exchanges ADD CONSTRAINT Fin_Security_Exchanges_fk1 FOREIGN KEY (currency_code) REFERENCES Geo_Currencies (code) ON DELETE SET NULL;
+ALTER TABLE Fin_Security_Exchanges DROP CONSTRAINT Fin_Security_Exchanges_fk2;
+ALTER TABLE Fin_Security_Exchanges ADD CONSTRAINT Fin_Security_Exchanges_fk2 FOREIGN KEY (place_code) REFERENCES Geo_Places (code) ON DELETE SET NULL;
 
-ALTER TABLE Fin_Security_Exchanges ADD CONSTRAINT Fin_Security_Exchanges_fk2 FOREIGN KEY (place_code) REFERENCES Geo_Places (code) ON DELETE CASCADE;
+ALTER TABLE Fin_Security_Exchanges ADD CONSTRAINT Fin_Security_Exchanges_fk3 FOREIGN KEY (currency_code) REFERENCES Geo_Currencies (code) ON DELETE SET NULL;
 
 ------------------------------------------------------------------
 PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'

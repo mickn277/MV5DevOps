@@ -1,5 +1,5 @@
 -- --------------------------------------------------------------------------------
--- 
+-- Duplicates are archived.
 -- --------------------------------------------------------------------------------
 CREATE OR REPLACE VIEW fin_security_gics_vw AS
 SELECT g.code, g.short_desc, g.gics_group, g.gics_group_level, g.description, g.notes,
@@ -13,6 +13,7 @@ FROM fin_security_gics g
     LEFT JOIN fin_security_gics ind ON (ind.code = g.parent_code)
     LEFT JOIN fin_security_gics ig ON (ig.code = ind.parent_code)
     LEFT JOIN fin_security_gics s ON (s.code = ig.parent_code)
+WHERE g.archive != -1
 ;
 
 /*
@@ -27,4 +28,5 @@ FROM fin_security_gics g
 --ORDER BY g.gics_group_level DESC, g.code
 ;
 */
+ 
  

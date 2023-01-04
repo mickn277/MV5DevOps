@@ -211,42 +211,72 @@ CREATE TABLE Fin_Security_Prices (
     Low NUMBER(12,6),
     Close NUMBER(12,6) NOT NULL,
     Volume NUMBER(12),
-    Open_Interest NUMBER(12),
-    comments VARCHAR2(50)
+    Open_Interest NUMBER(12)
 )
-PCTFREE 1 PCTUSED 20
+PCTFREE 0 PCTUSED 20
 COMPRESS FOR ALL OPERATIONS
 PARTITION BY RANGE (Security_Code) 
-  (PARTITION P01 VALUES LESS THAN ('0'),
-   PARTITION P02 VALUES LESS THAN ('2'),
-   PARTITION P03 VALUES LESS THAN ('4'),
-   PARTITION P04 VALUES LESS THAN ('6'),
-   PARTITION P05 VALUES LESS THAN ('8'),
-   PARTITION P06 VALUES LESS THAN ('A'),
-   PARTITION P07 VALUES LESS THAN ('C'),
-   PARTITION P08 VALUES LESS THAN ('E'),
-   PARTITION P09 VALUES LESS THAN ('G'),
-   PARTITION P10 VALUES LESS THAN ('I'),
-   PARTITION P11 VALUES LESS THAN ('K'),
-   PARTITION P12 VALUES LESS THAN ('M'),
-   PARTITION P13 VALUES LESS THAN ('O'),
-   PARTITION P14 VALUES LESS THAN ('Q'),
-   PARTITION P15 VALUES LESS THAN ('S'),
-   PARTITION P16 VALUES LESS THAN ('U'),
-   PARTITION P17 VALUES LESS THAN ('W'),
-   PARTITION P18 VALUES LESS THAN ('Y'),
-   PARTITION P20 VALUES LESS THAN (MAXVALUE))
+    (PARTITION P01 VALUES LESS THAN ('AA'),
+    PARTITION P02 VALUES LESS THAN ('AN'),
+    PARTITION P03 VALUES LESS THAN ('B'),
+    PARTITION P04 VALUES LESS THAN ('CA'),
+    PARTITION P05 VALUES LESS THAN ('CN'),
+    PARTITION P06 VALUES LESS THAN ('D'),
+    PARTITION P07 VALUES LESS THAN ('E'),
+    PARTITION P08 VALUES LESS THAN ('F'),
+    PARTITION P09 VALUES LESS THAN ('G'),
+    PARTITION P10 VALUES LESS THAN ('H'),
+    PARTITION P11 VALUES LESS THAN ('I'),
+    PARTITION P12 VALUES LESS THAN ('J'),
+    --PARTITION P02 VALUES LESS THAN ('K'),
+    --PARTITION P13 VALUES LESS THAN ('L'),
+    PARTITION P13 VALUES LESS THAN ('M'),
+    PARTITION P14 VALUES LESS THAN ('N'),
+    PARTITION P15 VALUES LESS THAN ('O'),
+    PARTITION P16 VALUES LESS THAN ('P'),
+    PARTITION P17 VALUES LESS THAN ('Q'),
+    PARTITION P18 VALUES LESS THAN ('R'),
+    PARTITION P19 VALUES LESS THAN ('S'),
+    PARTITION P20 VALUES LESS THAN ('T'),
+    PARTITION P21 VALUES LESS THAN ('U'),
+--    PARTITION P18 VALUES LESS THAN ('V'),
+--    PARTITION P18 VALUES LESS THAN ('W'),
+--    PARTITION P18 VALUES LESS THAN ('X'),
+--    PARTITION P18 VALUES LESS THAN ('Y'),
+--    PARTITION P18 VALUES LESS THAN ('Z'),
+    PARTITION P22 VALUES LESS THAN (MAXVALUE))
 ;
+
+-- SUM_0	SUM_1	SUM_2	SUM_3	SUM_4	SUM_5	SUM_6	SUM_7	SUM_8	SUM_9 -- All zero records
+--
+-- SUM_A	SUM_B	SUM_C	SUM_D	SUM_E	SUM_F	SUM_G	SUM_H	SUM_I	SUM_J	SUM_K	SUM_L	SUM_M	SUM_N	SUM_O	SUM_P	SUM_Q	SUM_R	SUM_S	SUM_T	SUM_U	SUM_V	SUM_W	SUM_X	SUM_Y	SUM_Z
+-- 15450	6937	13246	3124	5558	3382	6446	4322	5551	1246	1866	3222	9992	4213	3099	7656	1429	5562	9831	6108	1281	1976	3911	366	    222	    478
+
+
+0-4
+5-9
+A
+B
+C
+D
+U-Z 1
+
+
+
+
+
+
+
 
 /*
 ALTER TABLE Fin_Security_Prices ADD (comments VARCHAR2(50));
 
 ALTER TABLE Fin_Security_Prices MODIFY (
-    security_Code VARCHAR2(15)
+    comments VARCHAR2(10)
 );
 
 */
-
+SELECT * FROM Fin_Security_Prices WHERE comments IS NOT NULL; 
 ------------------------------------------------------------------
 PROMPT '-- (COMMENT) Comment on table columns --'
 -- NOTE:
@@ -315,6 +345,7 @@ PROMPT '-- (CREATE TRIGGER) Create Triggers for this table --'
 -- NOTE:
 --  If the standard auditing columns Created_Dt, Created_By, Changed_Dt, Changed_By are used in the table, uncomment the 2nd Trigger.
 ------------------------------------------------------------------
+--DROP TRIGGER Fin_Security_Prices_tr1;
 CREATE OR REPLACE TRIGGER Fin_Security_Prices_tr1 BEFORE INSERT ON Fin_Security_Prices FOR EACH ROW
 DECLARE
     v_Frequency fin_Securities.Frequency%TYPE;
@@ -357,6 +388,7 @@ BEGIN
     ELSE
         Raise_Application_Error(-20001, 'fin_Securities.Frequency="'||v_Frequency||'" not coded in Fin_Security_Prices_tr1.');
     END CASE;
+    --Debug_Pkg.Debug(p_RoutineName => 'Fin_Security_Prices_tr1', p_DebugComment => 'Price_Dt '||:NEW.Price_Dt, p_DebugText => '');
 END;
 /
 ------------------------------------------------------------------

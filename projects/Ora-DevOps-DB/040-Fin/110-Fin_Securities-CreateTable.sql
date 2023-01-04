@@ -350,10 +350,8 @@ ALTER TABLE Fin_Securities ADD CONSTRAINT Fin_Securities_fk4 FOREIGN KEY (Gics_C
 ------------------------------------------------------------------
 PROMPT '-- (CREATE SEQUENCE) Create the Sequence for this table --'
 ------------------------------------------------------------------
--- -- Simple Create Sequence:
---CREATE SEQUENCE Fin_Securities_sq 
---MINVALUE 1 MAXVALUE 9999999999999999999999999999 
---INCREMENT BY 1 START WITH 1 CACHE 10 NOORDER NOCYCLE;
+
+-- BUGFIX: NOCACHE because VM drops cache frequently, causing large jumps in numbers.
 
 -- Rebuild the sequence from table max value:
 SET SERVEROUTPUT ON
@@ -373,7 +371,7 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN
         NULL;
     END;
-    EXECUTE IMMEDIATE 'CREATE SEQUENCE '||v_Fin_Securities||'_sq MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH '||v_START_WITH||' CACHE 10 NOORDER NOCYCLE';
+    EXECUTE IMMEDIATE 'CREATE SEQUENCE '||v_Fin_Securities||'_sq MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH '||v_START_WITH||' NOCACHE NOORDER NOCYCLE';
     DBMS_OUTPUT.PUT_LINE('SEQUENCE '||v_Fin_Securities||'_sq CREATED');
 END;
 /

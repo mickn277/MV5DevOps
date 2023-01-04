@@ -1,1 +1,1 @@
-# EMX - Eric DeGroot's Matrix data
+# EMX - Eric's Matrix
